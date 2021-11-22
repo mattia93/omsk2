@@ -17,13 +17,13 @@ import getopt
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Input
 from tensorflow.keras.optimizers import Adam, SGD
-from tensorflow.keras.layers import Dense, LSTM, Embedding, GRU
+from tensorflow.keras.layers import Dense, LSTM, Embedding, GRU, Bidirectional
 #from AttentionMechanism import AttentionL
 from attention_extraction_layers import AttentionWeights, ContextVector
 from tensorflow.keras.optimizers import SGD, Adam
 from tensorflow.keras.utils import Sequence
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
-from tensorflow.keras.regularizers import l2
+from tensorflow.keras.regularizers import l2, l1, l1_l2
 from tensorflow_addons.losses import SigmoidFocalCrossEntropy
 from tensorflow.keras.losses import Loss
 from os.path import join
@@ -35,6 +35,7 @@ from tensorflow.keras.models import load_model
 def build_network_single_fact(generator: PlanGenerator,
                               embedding_params: dict = None,
                               hidden_layers: int = 1,
+                              regularizer_params: dict = None,
                               recurrent_list: list = ['lstm', None],
                               use_attention: bool = True,
                               optimizer_list: list = ['adam', None],
@@ -51,11 +52,24 @@ def build_network_single_fact(generator: PlanGenerator,
 
     
     for layer in range(hidden_layers):
+    
+        if regularizer_params is None or (regularizer_params['l1'] is None and regularizer_params['l2'] is None):
+            regularizer = None
+        elif regularizer_params['l1'] is None:
+            regularizer = l2(regularizer_params['l2'])
+        elif regularizer_params['l2'] is None:
+            regularizer = l1(regularizer_params['l1'])
+        else:
+            regularizer = l1_l2(l1=regularizer_params['l1'], l2=regularizer_params['l2'])
+            
         recurrent_type, recurrent_params = recurrent_list
         if recurrent_type == 'lstm':
             recurrent_layer = LSTM(**recurrent_params, name=f'lstm_layer_{layer}')(prev_layer)
         elif recurrent_type == 'gru':
             recurrent_layer = GRU(**recurrent_params, name=f'gru_layer_{layer}')(prev_layer)
+        elif recurrent_type == 'bilstm':
+            lstm = LSTM(**recurrent_params)
+            recurrent_layer = Bidirectional(layer=lstm)(prev_layer)
         prev_layer = recurrent_layer
 
     if use_attention:
@@ -114,10 +128,11 @@ def get_embedding_attention_network_params(model_name: str,
     return to_ret
     
 def get_default_params():
-    p = ParamsGenerator('multi_goal',
+    p = ParamsGenerator('optuna_best_30trials',
                         recurrent_type='lstm',
-                        output_dim=60,
-                        units=128,
+                        output_dim=107,
+                        units=256,
+                        dropout=0.3201566476337966,
                         loss_function='binary_crossentropy'
                         )
     return p.generate(1)[0]
@@ -254,7 +269,7 @@ if __name__ == '__main__':
     log_dir = './'
     loss_function = 'binary_crossentropy'
     compute_model = True
-    compute_results = False
+    compute_results = True
     incremental_tests = False
     params_dir = None
 

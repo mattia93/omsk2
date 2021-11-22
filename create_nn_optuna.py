@@ -31,66 +31,67 @@ from os.path import join
 from utils_functions import load_files, create_table, create_plot, load_from_pickles
 from typing import Union
 from tensorflow.keras.models import load_model
+from create_neural_network import build_network_single_fact
 
 import optuna
 from optuna.samplers import TPESampler
 
 
 
-def build_network_single_fact(generator: PlanGenerator,
-                              embedding_params: dict = None,
-                              hidden_layers: int = 1,
-                              regularizer_params: dict = None,
-                              recurrent_list: list = ['lstm', None],
-                              use_attention: bool = True,
-                              optimizer_list: list = ['adam', None],
-                              loss_function: Union[Loss, str] = 'binary_crossentropy',
-                              model_name: str = 'model') -> Model:
-    inputs = Input(shape=(generator.max_dim,))
-    prev_layer = inputs
-
-    if embedding_params is not None:
-        embedding_layer = Embedding(input_dim=len(generator.dizionario)+1,
-                                    input_length=generator.max_dim,
-                                    **embedding_params)(prev_layer)
-        prev_layer = embedding_layer
-
-    
-    for layer in range(hidden_layers):
-
-        if regularizer_params is None or (regularizer_params['l1'] is None and regularizer_params['l2'] is None):
-            regularizer = None
-        elif regularizer_params['l1'] is None:
-            regularizer = l2(regularizer_params['l2'])
-        elif regularizer_params['l2'] is None:
-            regularizer = l1(regularizer_params['l1'])
-        else:
-            regularizer = l1_l2(l1=regularizer_params['l1'], l2=regularizer_params['l2'])
-
-        recurrent_type, recurrent_params = recurrent_list
-        if recurrent_type == 'lstm':
-            recurrent_layer = LSTM(**recurrent_params, activity_regularizer= regularizer,
-                                   name=f'lstm_layer_{layer}')(prev_layer)
-        elif recurrent_type == 'gru':
-            recurrent_layer = GRU(**recurrent_params, activity_regularizer= regularizer,
-                                  name=f'gru_layer_{layer}')(prev_layer)
-        prev_layer = recurrent_layer
-
-    if use_attention:
-        attention_weights = AttentionWeights(generator.max_dim, name='attention_weights')(prev_layer)
-        context_vector = ContextVector()([prev_layer, attention_weights])
-        prev_layer = context_vector
-
-    outputs = Dense(len(generator.dizionario_goal), activation='softmax', name='output')(prev_layer)
-
-    optimizer_type, optimizer_params = optimizer_list
-    if optimizer_type == 'adam':
-        optimizer = Adam(**optimizer_params)
-
-    model = Model(inputs=inputs, outputs=outputs, name=model_name)
-    model.compile(optimizer=optimizer, loss=loss_function)
-
-    return model
+# def build_network_single_fact(generator: PlanGenerator,
+#                               embedding_params: dict = None,
+#                               hidden_layers: int = 1,
+#                               regularizer_params: dict = None,
+#                               recurrent_list: list = ['lstm', None],
+#                               use_attention: bool = True,
+#                               optimizer_list: list = ['adam', None],
+#                               loss_function: Union[Loss, str] = 'binary_crossentropy',
+#                               model_name: str = 'model') -> Model:
+#     inputs = Input(shape=(generator.max_dim,))
+#     prev_layer = inputs
+#
+#     if embedding_params is not None:
+#         embedding_layer = Embedding(input_dim=len(generator.dizionario)+1,
+#                                     input_length=generator.max_dim,
+#                                     **embedding_params)(prev_layer)
+#         prev_layer = embedding_layer
+#
+#
+#     for layer in range(hidden_layers):
+#
+#         if regularizer_params is None or (regularizer_params['l1'] is None and regularizer_params['l2'] is None):
+#             regularizer = None
+#         elif regularizer_params['l1'] is None:
+#             regularizer = l2(regularizer_params['l2'])
+#         elif regularizer_params['l2'] is None:
+#             regularizer = l1(regularizer_params['l1'])
+#         else:
+#             regularizer = l1_l2(l1=regularizer_params['l1'], l2=regularizer_params['l2'])
+#
+#         recurrent_type, recurrent_params = recurrent_list
+#         if recurrent_type == 'lstm':
+#             recurrent_layer = LSTM(**recurrent_params, activity_regularizer= regularizer,
+#                                    name=f'lstm_layer_{layer}')(prev_layer)
+#         elif recurrent_type == 'gru':
+#             recurrent_layer = GRU(**recurrent_params, activity_regularizer= regularizer,
+#                                   name=f'gru_layer_{layer}')(prev_layer)
+#         prev_layer = recurrent_layer
+#
+#     if use_attention:
+#         attention_weights = AttentionWeights(generator.max_dim, name='attention_weights')(prev_layer)
+#         context_vector = ContextVector()([prev_layer, attention_weights])
+#         prev_layer = context_vector
+#
+#     outputs = Dense(len(generator.dizionario_goal), activation='softmax', name='output')(prev_layer)
+#
+#     optimizer_type, optimizer_params = optimizer_list
+#     if optimizer_type == 'adam':
+#         optimizer = Adam(**optimizer_params)
+#
+#     model = Model(inputs=inputs, outputs=outputs, name=model_name)
+#     model.compile(optimizer=optimizer, loss=loss_function)
+#
+#     return model
 
 
 def get_embedding_attention_network_params(model_name: str,
@@ -283,7 +284,7 @@ def objective(trial: optuna.Trial,
     else:
         recurrent_dropout = 0
 
-    use_activity_regularisation = trial.suggest_categorical('use_activity_regularisation', [True, False])
+    use_activity_regularisation = False
     if use_activity_regularisation:
         l1 = trial.suggest_categorical('l1', [0.01, 0.001, 0.0001, 0.00001])
         l2 = trial.suggest_categorical('l2', [0.01, 0.001, 0.0001, 0.00001])
@@ -292,9 +293,9 @@ def objective(trial: optuna.Trial,
         l2 = None
 
     params = ParamsGenerator(model_name=model_name,
-                             recurrent_type= 'lstm',
-                             units=trial.suggest_int('hidden_layer_dim', 56, 256),
-                             output_dim=trial.suggest_int('embedding_dim', 30, 120),
+                             recurrent_type= trial.suggest_categorical('recurrent_type', ['lstm', 'bilstm']),
+                             units=trial.suggest_int('hidden_layer_dim', 150, 512),
+                             output_dim=trial.suggest_int('embedding_dim', 50, 200),
                              dropout= dropout,
                              recurrent_dropout=recurrent_dropout,
                              l1=l1,
@@ -334,14 +335,15 @@ if __name__ == '__main__':
     lr = 0.001
     log_dir = './'
     loss_function = 'binary_crossentropy'
-    compute_model = True
-    compute_results = False
-    incremental_tests = False
+    compute_optimization = False
+    get_results = False
     params_dir = None
+    n_trials = 1
 
     argv = sys.argv[1:]
     opts, args = getopt.getopt(argv, '', ['read-plans-dir=', 'target-dir=', 'plan-perc=', 'batch-size=', 'max-plan-dim=',
-                                          'log-dir=', 'model-name=', 'epochs=', 'read-dict-dir='])
+                                          'log-dir=', 'model-name=', 'epochs=', 'read-dict-dir=', 'trials=', 'optimize',
+                                          'results'])
                                           
     for opt, arg in opts:
         if opt == "--read-plans-dir":
@@ -362,6 +364,12 @@ if __name__ == '__main__':
             log_dir = arg
         elif opt == '--model-name':
             model_name = arg
+        elif opt == '--trials':
+            n_trials = int(arg)
+        elif opt == '--optimize':
+            compute_optimization = True
+        elif opt == '--results':
+            get_results = True
             
 #    if params_dir != None:
 #        params = load_files(params_dir,
@@ -371,13 +379,9 @@ if __name__ == '__main__':
 #        params = get_default_params()
 
     study_name = f'{model_name}'
-    n_trials=30
     db_dir = '/data/users/mchiari/goal_recognition/optuna_studies/'
 
     [dizionario, dizionario_goal] = load_from_pickles(read_dict_dir, ['dizionario', 'dizionario_goal'])
-    [train_plans, val_plans] = load_from_pickles(read_plans_dir, ['train_plans', 'val_plans'])
-
-    max_plan_dim = int(plan_percentage * max_plan_dim )
 
     study = optuna.create_study(
         storage=f'sqlite:///{join(db_dir, f"{study_name}.db")}',
@@ -386,32 +390,41 @@ if __name__ == '__main__':
         load_if_exists=True,
         study_name=study_name
     )
-    study.optimize(
-        lambda trial: objective(trial=trial,
-                                dizionario= dizionario,
-                                dizionario_goal= dizionario_goal,
-                                model_name=model_name,
-                                train_plans=train_plans,
-                                val_plans=val_plans,
-                                max_plan_dim=max_plan_dim,
-                                plan_percentage=plan_percentage),
-        n_trials=n_trials,
-        gc_after_trial=True
-    )
+
+    if compute_optimization:
+        [train_plans, val_plans] = load_from_pickles(read_plans_dir, ['train_plans', 'val_plans'])
+
+        max_plan_dim = int(plan_percentage * max_plan_dim)
+
+        study.optimize(
+            lambda trial: objective(trial=trial,
+                                    dizionario= dizionario,
+                                    dizionario_goal= dizionario_goal,
+                                    model_name=model_name,
+                                    train_plans=train_plans,
+                                    val_plans=val_plans,
+                                    max_plan_dim=max_plan_dim,
+                                    plan_percentage=plan_percentage),
+            n_trials=n_trials,
+            gc_after_trial=True
+        )
 
 
-    plot_dir = join(target_dir, study_name)
-    plot_dir = join(plot_dir, 'plots')
-    os.makedirs(plot_dir, exist_ok=True)
+        plot_dir = join(target_dir, study_name)
+        plot_dir = join(plot_dir, 'plots')
+        os.makedirs(plot_dir, exist_ok=True)
 
-    fig = optuna.visualization.plot_optimization_history(study)
-    fig.write_image(join(plot_dir, 'opt_hist.png'))
+        fig = optuna.visualization.plot_optimization_history(study)
+        fig.write_image(join(plot_dir, 'opt_hist.png'))
 
-    fig = optuna.visualization.plot_slice(study)
-    fig.write_image(join(plot_dir, 'slice.png'))
-    
-    fig = optuna.visualization.plot_param_importances(study)
-    fig.write_image(join(plot_dir, 'param_importance.png'))
+        fig = optuna.visualization.plot_slice(study)
+        fig.write_image(join(plot_dir, 'slice.png'))
+
+        fig = optuna.visualization.plot_param_importances(study)
+        fig.write_image(join(plot_dir, 'param_importance.png'))
+
+    if get_results:
+        print(study.best_params)
     
 #    hidden_layer_dim = params['recurrent_list'][1]['units']
 #    embedding_dim = params['embedding_params']['output_dim']
