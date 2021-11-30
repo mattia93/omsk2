@@ -26,7 +26,8 @@ def get_values_from_dict(file_path : str):
             res_dict = pickle.load(f)
             print(res_dict.keys())
             try:
-                y_pred_test = [ e > 0.5 for e in res_dict['y_test_pred']]
+                y_pred_test = res_dict['y_test_pred']
+                #y_pred_test = [ e > 0.5 for e in res_dict['y_test_pred']]
                 #print( res_dict['y_test_pred'])
                 y_true_test = res_dict['y_test_true']
             except KeyError:
