@@ -343,7 +343,7 @@ if __name__ == '__main__':
     argv = sys.argv[1:]
     opts, args = getopt.getopt(argv, '', ['read-plans-dir=', 'target-dir=', 'plan-perc=', 'batch-size=', 'max-plan-dim=',
                                           'log-dir=', 'model-name=', 'epochs=', 'read-dict-dir=', 'trials=', 'optimize',
-                                          'results'])
+                                          'results', 'db_dir='])
                                           
     for opt, arg in opts:
         if opt == "--read-plans-dir":
@@ -370,6 +370,8 @@ if __name__ == '__main__':
             compute_optimization = True
         elif opt == '--results':
             get_results = True
+        elif opt == '--db_dir':
+            db_dir = arg
             
 #    if params_dir != None:
 #        params = load_files(params_dir,
@@ -379,7 +381,9 @@ if __name__ == '__main__':
 #        params = get_default_params()
 
     study_name = f'{model_name}'
-    db_dir = '/data/users/mchiari/goal_recognition/optuna_studies/'
+    #db_dir = '/data/users/mchiari/goal_recognition/optuna_studies/'
+    
+    os.makedirs(db_dir, exist_ok=True)
 
     [dizionario, dizionario_goal] = load_from_pickles(read_dict_dir, ['dizionario', 'dizionario_goal'])
 
