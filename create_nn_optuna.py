@@ -9,7 +9,7 @@ import oneHot_deep
 from matplotlib import pyplot as plt
 import matplotlib
 from matplotlib.axes import Axes
-from plan_generator import PlanGenerator
+from plan_generator import PlanGenerator, PlanGeneratorMultiPerc
 from params_generator import ParamsGenerator
 
 matplotlib.use('agg')
@@ -263,14 +263,15 @@ def objective(trial: optuna.Trial,
               dizionario: dict,
               dizionario_goal: dict,
               max_plan_dim: int,
-              plan_percentage: float):
+              plan_percentage_min: float,
+              plan_percentage_max: float):
 
 
     if train_plans is not None and dizionario is not None and dizionario_goal is not None:
-        train_generator = PlanGenerator(train_plans, dizionario, dizionario_goal, batch_size, max_plan_dim,
-                                        plan_percentage)
-        val_generator = PlanGenerator(val_plans, dizionario, dizionario_goal, batch_size, max_plan_dim,
-                                          plan_percentage, shuffle=False)
+        train_generator = PlanGeneratorMultiPerc(train_plans, dizionario, dizionario_goal, batch_size, max_plan_dim,
+                                        plan_percentage_min, plan_percentage_max)
+        val_generator = PlanGeneratorMultiPerc(val_plans, dizionario, dizionario_goal, batch_size, max_plan_dim,
+                                          plan_percentage_min, plan_percentage_max, shuffle=False)
 
     use_dropout = trial.suggest_categorical('use_dropout', [True, False])
     if use_dropout:
@@ -339,6 +340,7 @@ if __name__ == '__main__':
     get_results = False
     params_dir = None
     n_trials = 1
+    plan_percentage_min = 0.3
 
     argv = sys.argv[1:]
     opts, args = getopt.getopt(argv, '', ['read-plans-dir=', 'target-dir=', 'plan-perc=', 'batch-size=', 'max-plan-dim=',
