@@ -107,7 +107,7 @@ if __name__ == '__main__':
     opts, args = getopt.getopt(argv, 'r:n:')
     read_folder = '.'
     output_folder = '.'
-    filename = 'test/test_plans_p01.pkl'
+    filename = None
 
     for opt, arg in opts:
         if opt == '-r':
