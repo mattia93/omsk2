@@ -59,6 +59,37 @@ class PlanGenerator(Sequence):
         if self.shuffle == True:
             np.random.shuffle(self.plans)
 
+
+class PlanGeneratorMultiPerc(Sequence):
+    def __getitem__(self, index):
+        batches = self.plans[index * self.batch_size:(index + 1) * self.batch_size]
+        X = np.zeros((int(self.batch_size), int(self.max_dim)))
+        Y = np.zeros((int(self.batch_size), len(self.dizionario_goal)))
+        for i, plan in enumerate(batches):
+            p = np.random.uniform(self.min_perc, self.perc)
+            actions = get_actions(plan.actions, p, self.dizionario)
+            fill_action_sequence(X, self.max_dim, actions, i)
+            Y[i] = get_goal(plan.goals, self.dizionario_goal)
+        return X, Y
+
+    def __len__(self):
+        return len(self.plans) // self.batch_size
+
+    def __init__(self, plans, dizionario, dizionario_goal, batch_size, max_dim, min_perc, max_perc, shuffle=True):
+        self.plans = plans
+        self.dizionario_goal = dizionario_goal
+        self.dizionario = dizionario
+        self.batch_size = batch_size
+        self.max_dim = max_dim
+        self.min_perc = min_perc
+        self.perc = max_perc
+        self.shuffle = shuffle
+
+    def on_epoch_end(self):
+        '''Updates indexes after each epoch'''
+        if self.shuffle == True:
+            np.random.shuffle(self.plans)
+
 def get_actions(actions, perc, dizionario):
     size = int(np.ceil(len(actions) * perc))
     indexes = np.ones(size, dtype=int) * -1
