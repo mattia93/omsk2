@@ -66,6 +66,9 @@ class PlanGeneratorMultiPerc(Sequence):
         X = np.zeros((int(self.batch_size), int(self.max_dim)))
         Y = np.zeros((int(self.batch_size), len(self.dizionario_goal)))
         for i, plan in enumerate(batches):
+            seed = plan.plan_name.rsplit('-p',1)[1]
+            seed = seed.split('_', 1)[0]
+            np.random.seed(int(seed))
             p = np.random.uniform(self.min_perc, self.perc)
             actions = get_actions(plan.actions, p, self.dizionario)
             fill_action_sequence(X, self.max_dim, actions, i)
@@ -119,5 +122,6 @@ def get_goal(g, dizionario_goal):
         goal = goal + dizionario_goal[subgoal]
     return goal
     
+np.random.seed(43)
 random.seed(43)
 

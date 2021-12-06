@@ -8,7 +8,7 @@ from pathlib import Path
 import oneHot_deep
 from matplotlib import pyplot as plt
 import matplotlib
-from plan_generator import PlanGenerator
+from plan_generator import PlanGenerator, PlanGeneratorMultiPerc
 from params_generator import ParamsGenerator
 
 matplotlib.use('agg')
@@ -244,11 +244,11 @@ def get_callback_default_params(callback_name: str) -> list:
     return to_return
 
 def run_tests(test_plans: list, dizionario: dict, dizionario_goal: dict, batch_size: int, max_plan_dim:int,
-              plan_percentage: float, save_dir: str, filename='metrics') -> None:
+              min_plan_perc : float, plan_percentage: float, save_dir: str, filename='metrics') -> None:
     if test_plans is not None:
         test_plans = test_plans[0]
-        test_generator = PlanGenerator(test_plans, dizionario, dizionario_goal, batch_size, max_plan_dim,
-                                       plan_percentage, shuffle=False)
+        test_generator = PlanGeneratorMultiPerc(test_plans, dizionario, dizionario_goal, batch_size,
+                                                max_plan_dim, min_plan_perc, plan_percentage, shuffle=False)
         y_pred, y_true = get_model_predictions(test_generator)
         scores = print_metrics(y_true=y_true, y_pred=y_pred, dizionario_goal=dizionario_goal, save_dir=save_dir, filename=filename)
 
@@ -272,6 +272,7 @@ if __name__ == '__main__':
     compute_results = True
     incremental_tests = False
     params_dir = None
+    min_plan_perc = 0.3
 
     argv = sys.argv[1:]
     opts, args = getopt.getopt(argv, '', ['read-plans-dir=', 'target-dir=', 'plan-perc=', 'batch-size=', 'max-plan-dim=',
@@ -329,12 +330,12 @@ if __name__ == '__main__':
     if compute_model:
         [train_plans, val_plans] = load_from_pickles(read_plans_dir, ['train_plans', 'val_plans'])
         if train_plans is not None and dizionario is not None and dizionario_goal is not None:
-            train_generator = PlanGenerator(train_plans, dizionario, dizionario_goal, batch_size, max_plan_dim,
-                                            plan_percentage)
+            train_generator = PlanGeneratorMultiPerc(train_plans, dizionario, dizionario_goal,
+                                                     batch_size, max_plan_dim, min_plan_perc, plan_percentage)
             val_generator = None
             if val_plans is not None:
-                val_generator = PlanGenerator(val_plans, dizionario, dizionario_goal, batch_size, max_plan_dim,
-                                              plan_percentage, shuffle=False)
+                val_generator = PlanGeneratorMultiPerc(val_plans, dizionario, dizionario_goal, batch_size,
+                                              max_plan_dim, min_plan_perc, plan_percentage, shuffle=False)
 
             model = build_network_single_fact(train_generator, **params)
             print_network_details(model, params)
@@ -369,7 +370,7 @@ if __name__ == '__main__':
             test_plans = load_from_pickles(test_dir, [f])
             if not(test_plans is None) and len(test_plans)>0:
                 run_tests(test_plans=test_plans, dizionario=dizionario, dizionario_goal=dizionario_goal, batch_size=batch_size,
-                          max_plan_dim=max_plan_dim, plan_percentage=plan_percentage, save_dir=model_dir, filename=f'metrics_{f}')
+                          max_plan_dim=max_plan_dim, min_plan_perc=min_plan_perc, plan_percentage=plan_percentage, save_dir=model_dir, filename=f'metrics_{f}')
             else:
                 print(f'Problems with file {f} in folder {test_dir}')
 

@@ -36,6 +36,7 @@ if __name__ == '__main__':
     plan_percentage = 0.5
     batch_size = 64
     max_plan_dim = 100
+    max_plan_perc = 0.7
 
     for opt, arg in opts:
         if opt == '--read-dict-dir':
@@ -71,7 +72,7 @@ if __name__ == '__main__':
     [dizionario, dizionario_goal] = load_from_pickles(read_dict_dir, ['dizionario', 'dizionario_goal'])
     test_plans = load_from_pickles(read_test_plans_dir, filenames)
 
-    max_dim = int(perc_action*max_dim)
+    max_dim = int(max_plan_perc*max_dim)
 
     if model is None or test_plans is None or dizionario is None or dizionario_goal is None:
         print('Could not create the file')
