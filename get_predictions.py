@@ -7,7 +7,7 @@ from keras.models import load_model
 #from AttentionMechanism import AttentionL
 from attention_extraction_layers import AttentionWeights, ContextVector
 from plan_generator import PlanGenerator
-from utils_functions import load_files, load_from_pickles
+from utils_functions import load_from_pickles
 import os
 from os.path import join
 

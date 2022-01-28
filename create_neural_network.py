@@ -27,7 +27,7 @@ from tensorflow.keras.regularizers import l2, l1, l1_l2
 from tensorflow_addons.losses import SigmoidFocalCrossEntropy
 from tensorflow.keras.losses import Loss
 from os.path import join
-from utils_functions import load_files, create_table, create_plot, load_from_pickles
+from utils_functions import load_file, create_table, create_plot, load_from_pickles
 from typing import Union
 from tensorflow.keras.models import load_model
 
@@ -299,7 +299,7 @@ if __name__ == '__main__':
             params_dir = arg
             
     if params_dir != None:
-        params = load_files(params_dir,
+        params = load_file(params_dir,
                              load_ok=f'Params loaded from {params_dir}',
                              error=f'Could not load params from {params_dir}.\nCheck the --params-dict option.')
     else:

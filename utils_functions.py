@@ -5,7 +5,7 @@ import numpy as np
 from os.path import join
 
 
-def load_files(read_file : str,
+def load_file(read_file : str,
                load_ok : str = 'File loaded',
                error : str = f'Error while loading file') -> list:
     try:
@@ -25,7 +25,7 @@ def load_from_pickles(read_dir: str, files: list) -> list:
 
     to_return = []
     for file_name in files:
-        to_return.append(load_files(join(read_dir, file_name),
+        to_return.append(load_file(join(read_dir, file_name),
                          load_ok=MSG_OK.format(file_name, read_dir),
                          error=MSG_ERROR.format(file_name, read_dir)))
     return to_return

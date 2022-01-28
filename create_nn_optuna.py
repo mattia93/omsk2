@@ -28,7 +28,7 @@ from tensorflow.keras.regularizers import l2, l1, l1_l2
 from tensorflow_addons.losses import SigmoidFocalCrossEntropy
 from tensorflow.keras.losses import Loss, BinaryCrossentropy
 from os.path import join
-from utils_functions import load_files, create_table, create_plot, load_from_pickles
+from utils_functions import create_table, create_plot, load_from_pickles
 from typing import Union
 from tensorflow.keras.models import load_model
 from create_neural_network import build_network_single_fact
