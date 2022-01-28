@@ -1,11 +1,9 @@
 import os
-
 import numpy as np
 import utils
-import sys
 import save_arrays
 import oneHot_deep
-import getopt
+import click
 
 
 def create_dictionary(plans : list, oneHot : bool = True):
@@ -41,36 +39,30 @@ def create_dictionary_goals_not_fixed(plans):
     return dizionario_goal
 
 
-if __name__ == '__main__':
-    argv = sys.argv[1:]
-    np.random.seed(47)
-    opts, args = getopt.getopt(argv, "r:s:a:p:vh")
-    read_folder, save_folder, max_actions, perc_dataset = 'xml_prova', 'dataset_prova', 100, 0.8
-    use_validation = False
-    use_onehot = False
-    for opt, arg in opts:
-        if opt == "-r":
-            read_folder = arg
-        elif opt == "-s":
-            save_folder = arg
-        elif opt == "-a":
-            max_actions = int(arg)
-        elif opt == "-p":
-            perc_dataset = float(arg)
-        elif opt == '-v':
-            use_validation = True
-        elif opt == '-h':
-            use_onehot = True
+@click.command()
+@click.option('--read-dir', 'read_dir', prompt=True, required=True, type=click.STRING,
+              help='Folder that contains the XMLs files.')
+@click.option('--target-dir', 'target_dir', prompt=True, required=True,
+              type=click.STRING, help=("Folder where to store plans file. It's created if it does not exists."))
+@click.option('--onehot', is_flag=True, default=False, help=('Flag that applies the one-hot representation for the '+
+                                                             'goals.'))
+def run(read_dir, target_dir, onehot):
 
-    os.makedirs(save_folder, exist_ok=True)
-            
-    plans = utils.get_plans(read_folder, max_actions)
-    dizionario = create_dictionary(plans, use_onehot)
+    os.makedirs(target_dir, exist_ok=True)
+
+    plans = utils.get_all_plans(read_dir)
+    dizionario = create_dictionary(plans, onehot)
     dizionario_goal = create_dictionary_goals_not_fixed(plans)
 
-    save_arrays.save(plans, save_folder + '/plans')
-    save_arrays.save(dizionario, save_folder + '/dizionario')
-    save_arrays.save(dizionario_goal, save_folder + '/dizionario_goal')
+    save_arrays.save(plans, os.path.join(target_dir, 'plans'))
+    save_arrays.save(dizionario, os.path.join(target_dir, 'dizionario'))
+    save_arrays.save(dizionario_goal, os.path.join(target_dir, 'dizionario_goal'))
+
+if __name__ == '__main__':
+    np.random.seed(47)
+    run()
+
+
 
 
 
