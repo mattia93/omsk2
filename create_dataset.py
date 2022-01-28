@@ -1,9 +1,9 @@
 import os
 import numpy as np
 import utils
-import save_arrays
 import oneHot_deep
 import click
+from utils_functions import save_file
 
 
 def create_dictionary(plans : list, oneHot : bool = True):
@@ -54,9 +54,9 @@ def run(read_dir, target_dir, onehot):
     dizionario = create_dictionary(plans, onehot)
     dizionario_goal = create_dictionary_goals_not_fixed(plans)
 
-    save_arrays.save(plans, os.path.join(target_dir, 'plans'))
-    save_arrays.save(dizionario, os.path.join(target_dir, 'dizionario'))
-    save_arrays.save(dizionario_goal, os.path.join(target_dir, 'dizionario_goal'))
+    save_file(plans, target_dir, 'plans')
+    save_file(dizionario, target_dir, 'dizionario')
+    save_file(dizionario_goal, target_dir, 'dizionario_goal')
 
 if __name__ == '__main__':
     np.random.seed(47)

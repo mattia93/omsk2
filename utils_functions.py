@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 import numpy as np
 from os.path import join
+import os
 
 
 def load_file(read_file : str,
@@ -29,6 +30,22 @@ def load_from_pickles(read_dir: str, files: list) -> list:
                          load_ok=MSG_OK.format(file_name, read_dir),
                          error=MSG_ERROR.format(file_name, read_dir)))
     return to_return
+
+
+def save_file(o: object, target_dir: str, filename: str) -> None:
+    MSG_OK = '{0} saved in {1}'
+    MSG_ERROR = 'Could not save {0} in {1}'
+
+    os.makedirs(target_dir, exist_ok=True)
+    try:
+        with open(join(target_dir, filename), 'wb') as wf:
+            pickle.dump(o, wf)
+            wf.close()
+        print(MSG_OK.format(filename, target_dir))
+    except pickle.PicklingError:
+        print(MSG_ERROR.format(filename, target_dir))
+
+    return
 
 
 def create_table(title: str, headers : list, rows : list, just : int = 10, precision : int = 2) -> list:
