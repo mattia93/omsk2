@@ -1,10 +1,13 @@
 import os
 
+import click
 import numpy as np
 import pickle
 import sys
 import random
 from pathlib import Path
+
+from constants import HELPS, ERRORS, KEYS, FILENAMES
 import oneHot_deep
 from matplotlib import pyplot as plt
 import matplotlib
@@ -77,73 +80,20 @@ def build_network_single_fact(generator: PlanGenerator,
         context_vector = ContextVector()([prev_layer, attention_weights])
         prev_layer = context_vector
 
-    outputs = Dense(len(generator.dizionario_goal), activation='softmax', name='output')(prev_layer)
+    outputs = Dense(len(generator.dizionario_goal), activation='sigmoid', name='output')(prev_layer)
 
     optimizer_type, optimizer_params = optimizer_list
     if optimizer_type == 'adam':
         optimizer = Adam(**optimizer_params)
-
+    if loss_function == 'SigmoidFocalCrossEntropy':
+        loss_function = SigmoidFocalCrossEntropy()
     model = Model(inputs=inputs, outputs=outputs, name=model_name)
     model.compile(optimizer=optimizer, loss=loss_function)
 
     return model
 
 
-def get_embedding_attention_network_params(model_name: str,
-                                           embedding_dim: int = 124,
-                                           recurrent_type: str = 'lstm',
-                                           recurrent_dim: int = 64,
-                                           dropout: float = 0,
-                                           recurrent_dropout: float = 0,
-                                           learning_rate: float = 0.001,
-                                           loss_function: Union[str, Loss] = 'binary_crossentropy') -> dict:
-    to_ret = {
-        'embedding_params': {
-            'output_dim': embedding_dim,
-            'mask_zero': True},
 
-        'recurrent_list': [
-            recurrent_type,
-            {'units': recurrent_dim,
-             'activation': 'linear',
-             'return_sequences': True,
-             'dropout': dropout,
-             'recurrent_dropout': recurrent_dropout}],
-
-        'use_attention': True,
-
-        'optimizer_list': [
-            'adam',
-            {'lr': learning_rate,
-             'beta_1': 0.9,
-             'beta_2': 0.999,
-             'amsgrad': False,
-             'clipnorm': 1.0}
-        ],
-
-        'loss_function': loss_function,
-
-        'model_name': model_name
-    }
-    return to_ret
-    
-def get_default_params():
-    p = ParamsGenerator('optuna_best_30trials',
-                        recurrent_type='lstm',
-                        output_dim=107,
-                        units=256,
-                        dropout=0.3201566476337966,
-                        loss_function='binary_crossentropy'
-                        )
-    return p.generate(1)[0]
-
-def get_loss_name(loss : Union[str, Loss]):
-    if type(loss) is not str:
-        loss = str(loss)
-        loss = loss.rsplit('.', 1)[1]
-        loss = loss.split()[0]
-
-    return loss
 
 
 def print_network_details(model: Model, params: dict, save_file: str = None) -> None:
@@ -151,7 +101,7 @@ def print_network_details(model: Model, params: dict, save_file: str = None) -> 
 
     rows = [
         [params['embedding_params']['output_dim'],
-         get_loss_name(params['loss_function']),
+         params['loss_function'],
          params['recurrent_list'][1]['units'],
          params['recurrent_list'][1]['dropout'],
          params['recurrent_list'][1]['recurrent_dropout']]]
@@ -216,7 +166,7 @@ def print_metrics(y_true: list, y_pred: list, dizionario_goal: dict, save_dir: s
     return [accuracy, hamming_loss]
 
 
-def get_model_predictions(test_generator : PlanGenerator) -> list:
+def get_model_predictions(model: Model, test_generator : PlanGenerator) -> list:
     y_pred = list()
     y_true = list()
     for i in range(test_generator.__len__()):
@@ -225,10 +175,25 @@ def get_model_predictions(test_generator : PlanGenerator) -> list:
         y_true.extend(y)
     return y_pred, y_true
 
+def create_model_dir_name(params: dict, epochs:int, max_plan_percentage: float, batch_size: int):
+    hidden_layer_dim = params['recurrent_list'][1]['units']
+    embedding_dim = params['embedding_params']['output_dim']
+    dropout = params['recurrent_list'][1]['dropout']
+    recurrent_dropout = params['recurrent_list'][1]['recurrent_dropout']
+    model_name = params['model_name']
+    recurrent_type = params['recurrent_list'][0]
+    loss_function = params['loss_function']
+
+    model_dir_name = (f'{model_name}_{recurrent_type}_epochs={epochs}_embedding={embedding_dim}_units=' +
+                      f'{hidden_layer_dim}_dropout={dropout}_recurrent-dropout={recurrent_dropout}_loss=' +
+                      f'{loss_function}_plan-percentage={max_plan_percentage}_batch-size={batch_size}')
+
+    return model_dir_name
 
 
 
-def get_callback_default_params(callback_name: str) -> list:
+
+def get_callback_default_params(callback_name: str) -> dict:
     to_return = dict()
     if callback_name == 'model_checkpoint':
         to_return['save_weights_only'] = False
@@ -243,107 +208,100 @@ def get_callback_default_params(callback_name: str) -> list:
         to_return['restore_best_weights'] = True
     return to_return
 
-def run_tests(test_plans: list, dizionario: dict, dizionario_goal: dict, batch_size: int, max_plan_dim:int,
+
+def run_tests(model: Model, test_plans: list, dizionario: dict, dizionario_goal: dict, batch_size: int, max_plan_dim:int,
               min_plan_perc : float, plan_percentage: float, save_dir: str, filename='metrics') -> None:
     if test_plans is not None:
         test_plans = test_plans[0]
         test_generator = PlanGeneratorMultiPerc(test_plans, dizionario, dizionario_goal, batch_size,
                                                 max_plan_dim, min_plan_perc, plan_percentage, shuffle=False)
-        y_pred, y_true = get_model_predictions(test_generator)
+        y_pred, y_true = get_model_predictions(model, test_generator)
         scores = print_metrics(y_true=y_true, y_pred=y_pred, dizionario_goal=dizionario_goal, save_dir=save_dir, filename=filename)
 
 
-if __name__ == '__main__':
-    np.random.seed(47)
-
-    read_plans_dir = 'dataset_whole2_small'
-    read_dict_dir = 'dataset_whole2_small'
-    target_dir = 'modello_prova'
-    plan_percentage = 0.5
-    batch_size = 64
-    max_plan_dim = 100
-    
-    
-    epochs = 1
-    lr = 0.001
-    log_dir = './'
-    loss_function = 'binary_crossentropy'
-    compute_model = True
-    compute_results = True
-    incremental_tests = False
-    params_dir = None
-    min_plan_perc = 0.3
-
-    argv = sys.argv[1:]
-    opts, args = getopt.getopt(argv, '', ['read-plans-dir=', 'target-dir=', 'plan-perc=', 'batch-size=', 'max-plan-dim=',
-                                          'log-dir=', 'params-dict=', 'epochs=', 'read-dict-dir='])
-                                          
-    for opt, arg in opts:
-        if opt == "--read-plans-dir":
-            read_plans_dir = arg
-        if opt == "--read-dict-dir":
-            read_dict_dir = arg
-        elif opt == "--target-dir":
-            target_dir = arg
-        elif opt == "--plan-perc":
-            plan_percentage = float(arg)
-        elif opt == "--batch-size":
-            batch_size = int(arg)
-        elif opt == "--epochs":
-            epochs = int(arg)
-        elif opt == '--max-plan-dim':
-            max_plan_dim = int(arg)
-        elif opt == '--log-dir':
-            log_dir = arg
-        elif opt == '--params-dict':
-            params_dir = arg
-            
-    if params_dir != None:
+@click.group()
+@click.pass_context
+@click.option('--network-params', 'params_dir', required=True, prompt=True, help=HELPS.NETWORK_PARAMETERS_SRC,
+              type=click.STRING)
+@click.option('--target-dir', 'target_dir', required=True, prompt=True, help=HELPS.MODEL_DIR_OUT, type=click.STRING)
+@click.option('--plan-perc', 'max_plan_percentage', required=True, prompt=True, help=HELPS.MAX_PLAN_PERCENTAGE,
+              type=click.FloatRange(0,1))
+@click.option('--batch-size', 'batch_size', default=64, type=click.INT, help=HELPS.BATCH_SIZE, show_default=True)
+@click.option('--read-dict-dir', 'read_dict_dir', required=True, prompt=True,
+              help=HELPS.DICT_FOLDER_SRC, type=click.STRING)
+@click.option('--epochs', default=50, help=HELPS.EPOCHS, type=click.INT, show_default=True)
+@click.option('--min-plan-perc', 'min_plan_percentage', default=0.3, type=click.FloatRange(0,1),
+              help=HELPS.MIN_PLAN_PERCENTAGE)
+@click.option('--read-plans-dir', 'read_plans_dir', required=True, prompt=True,
+              help= HELPS.PLANS_FOLDER_SRC, type=click.STRING)
+@click.option('--max-plan-dim', 'max_plan_dim', required=True, prompt=True, help=HELPS.MAX_PLAN_LENGTH, type=click.INT)
+def run(ctx, params_dir, target_dir, max_plan_percentage, batch_size, read_dict_dir, epochs, min_plan_percentage,
+        read_plans_dir, max_plan_dim):
+    if params_dir is not None:
         params = load_file(params_dir,
-                             load_ok=f'Params loaded from {params_dir}',
-                             error=f'Could not load params from {params_dir}.\nCheck the --params-dict option.')
+                           load_ok=ERRORS.STD_LOAD_FILE_OK.format(os.path.basename(params_dir),
+                                                                  os.path.dirname(params_dir)),
+                           error=ERRORS.STD_ERROR_LOAD_FILE.format(os.path.basename(params_dir)))
+        model_dir_name = create_model_dir_name(params, epochs, max_plan_percentage, batch_size)
+        model_dir = join(target_dir, model_dir_name)
+        os.makedirs(model_dir, exist_ok=True)
+
+        [dizionario, dizionario_goal] = load_from_pickles(read_dict_dir, ['dizionario', 'dizionario_goal'])
+
+        max_plan_dim = int(max_plan_percentage * max_plan_dim)
+
+        ctx.ensure_object(dict)
+        ctx.obj[KEYS.PARAMS] = params
+        ctx.obj[KEYS.MODEL_DIR] = model_dir
+        ctx.obj[KEYS.ACTION_DICT] = dizionario
+        ctx.obj[KEYS.GOALS_DICT] = dizionario_goal
+        ctx.obj[KEYS.EPOCHS] = epochs
+        ctx.obj[KEYS.BATCH_SIZE] = batch_size
+        ctx.obj[KEYS.MAX_PLAN_PERC] = max_plan_percentage
+        ctx.obj[KEYS.MIN_PLAN_PERC] = min_plan_percentage
+        ctx.obj[KEYS.READ_PLANS_DIR] = read_plans_dir
+        ctx.obj[KEYS.MAX_PLAN_DIM] = max_plan_dim
     else:
-        params = get_default_params()
-            
-    
-    hidden_layer_dim = params['recurrent_list'][1]['units']
-    embedding_dim = params['embedding_params']['output_dim']
-    dropout = params['recurrent_list'][1]['dropout']
-    recurrent_dropout = params['recurrent_list'][1]['recurrent_dropout']
-    model_name = params['model_name']
-    recurrent_type = params['recurrent_list'][0]
-    loss_function = params['loss_function']
-    
-    if loss_function == 'SigmoidFocalCrossEntropy':
-        params['loss_function'] = SigmoidFocalCrossEntropy()
-
-    max_plan_dim = int(plan_percentage * max_plan_dim)
-    model_dir_name = f'{model_name}_{recurrent_type}_epochs={epochs}_embedding={embedding_dim}_units={hidden_layer_dim}_dropout={dropout}_' \
-                     f'recurrent-dropout={recurrent_dropout}_loss={get_loss_name(loss_function)}_plan-percentage={plan_percentage}_batch-size={batch_size}'
-    model_dir = join(target_dir, model_dir_name)
-    plot_dir = join(model_dir, 'plots')
-    os.makedirs(plot_dir, exist_ok=True)
+        return
 
 
-    [dizionario, dizionario_goal] = load_from_pickles(read_dict_dir, ['dizionario', 'dizionario_goal'])
+@run.command('train-model')
+@click.pass_context
+def train_model(ctx):
 
-    if compute_model:
+    if ctx.ensure_object(dict):
+        params = ctx.obj[KEYS.PARAMS]
+        model_dir = ctx.obj[KEYS.MODEL_DIR]
+        dizionario = ctx.obj[KEYS.ACTION_DICT]
+        dizionario_goal = ctx.obj[KEYS.GOALS_DICT]
+        epochs = ctx.obj[KEYS.EPOCHS]
+        batch_size = ctx.obj[KEYS.BATCH_SIZE]
+        read_plans_dir = ctx.obj[KEYS.READ_PLANS_DIR]
+        max_plan_percentage = ctx.obj[KEYS.MAX_PLAN_PERC]
+        min_plan_percentage = ctx.obj[KEYS.MIN_PLAN_PERC]
+        max_plan_dim = ctx.obj[KEYS.MAX_PLAN_DIM]
+
+        model_name = params['model_name']
+        plot_dir = join(model_dir, 'plots')
+        os.makedirs(plot_dir, exist_ok=True)
+
         [train_plans, val_plans] = load_from_pickles(read_plans_dir, ['train_plans', 'val_plans'])
         if train_plans is not None and dizionario is not None and dizionario_goal is not None:
             train_generator = PlanGeneratorMultiPerc(train_plans, dizionario, dizionario_goal,
-                                                     batch_size, max_plan_dim, min_plan_perc, plan_percentage)
+                                                     batch_size, max_plan_dim, min_plan_percentage, max_plan_percentage)
             val_generator = None
             if val_plans is not None:
                 val_generator = PlanGeneratorMultiPerc(val_plans, dizionario, dizionario_goal, batch_size,
-                                              max_plan_dim, min_plan_perc, plan_percentage, shuffle=False)
+                                                       max_plan_dim, min_plan_percentage, max_plan_percentage,
+                                                       shuffle=False)
 
             model = build_network_single_fact(train_generator, **params)
             print_network_details(model, params)
 
-
             callbacks = [
                 EarlyStopping(**get_callback_default_params('early_stopping')),
-                ModelCheckpoint(filepath=join(model_dir, 'checkpoint'), **get_callback_default_params('model_checkpoint'))
+                ModelCheckpoint(filepath=join(model_dir, 'checkpoint'),
+                                **get_callback_default_params('model_checkpoint'))
             ]
             history = train_network(model=model,
                                     train_generator=train_generator,
@@ -352,26 +310,49 @@ if __name__ == '__main__':
                                     epochs=epochs)
             model.save(join(model_dir, f'{model_name}.h5'))
             save_plot(history=history, plot_dir=join(plot_dir, 'loss_plot.png'))
-
     else:
+        print(ERRORS.MSG_ERROR_LOAD_PARAMS)
+
+
+@run.command('results')
+@click.pass_context
+@click.option('--incremental-tests', 'incremental_tests', is_flag=True, default=False, help=HELPS.INCREMENTAL_TESTS_FLAG)
+def results(ctx, incremental_tests):
+
+    if ctx.ensure_object(dict):
+        params = ctx.obj[KEYS.PARAMS]
+        model_dir = ctx.obj[KEYS.MODEL_DIR]
+        dizionario = ctx.obj[KEYS.ACTION_DICT]
+        dizionario_goal = ctx.obj[KEYS.GOALS_DICT]
+        batch_size = ctx.obj[KEYS.BATCH_SIZE]
+        read_plans_dir = ctx.obj[KEYS.READ_PLANS_DIR]
+        max_plan_percentage = ctx.obj[KEYS.MAX_PLAN_PERC]
+        min_plan_percentage = ctx.obj[KEYS.MIN_PLAN_PERC]
+        max_plan_dim = ctx.obj[KEYS.MAX_PLAN_DIM]
+
+
+        model_name = params['model_name']
         model = load_model(join(model_dir, f'{model_name}.h5'),
                            custom_objects={'AttentionWeights': AttentionWeights,'ContextVector': ContextVector})
         print(model.summary())
 
-    if compute_results:
         if incremental_tests:
             test_dir = join(read_plans_dir, 'incremental_test_sets')
             files = os.listdir(test_dir)
         else:
             test_dir = read_plans_dir
-            files = ['test_plans']
+            files = [FILENAMES.TEST_PLANS_FILENAME]
 
         for f in files:
             test_plans = load_from_pickles(test_dir, [f])
             if not(test_plans is None) and len(test_plans)>0:
-                run_tests(test_plans=test_plans, dizionario=dizionario, dizionario_goal=dizionario_goal, batch_size=batch_size,
-                          max_plan_dim=max_plan_dim, min_plan_perc=min_plan_perc, plan_percentage=plan_percentage, save_dir=model_dir, filename=f'metrics_{f}')
+                run_tests(model=model, test_plans=test_plans, dizionario=dizionario, dizionario_goal=dizionario_goal,
+                          batch_size=batch_size, max_plan_dim=max_plan_dim, min_plan_perc=min_plan_percentage,
+                          plan_percentage=max_plan_percentage, save_dir=model_dir, filename=f'metrics_{f}')
             else:
                 print(f'Problems with file {f} in folder {test_dir}')
 
+if __name__ == '__main__':
+    np.random.seed(47)
+    run()
 

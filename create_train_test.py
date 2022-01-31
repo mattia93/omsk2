@@ -4,7 +4,7 @@ import numpy as np
 import random
 import click
 import os
-from constants import ERRORS, FILENAMES, CREATE_TRAIN_TEST, HELPS
+from constants import ERRORS, FILENAMES, CREATE_TRAIN_TEST, HELPS, KEYS
 
 
 
@@ -85,7 +85,7 @@ def print_goal_distrib(plans: list, save_graph: str = None, nbins: int = 10):
 @click.option('--read-dir', 'read_dir', type=click.STRING, prompt=True, required=True,
                help=HELPS.PLANS_AND_DICT_FOLDER_SRC)
 def cli(ctx, read_dir):
-    file_names = ['plans']
+    file_names = [FILENAMES.PLANS_FILENAME]
     plans = list()
     for file_name in file_names:
         f = join(read_dir, file_name)
@@ -96,7 +96,7 @@ def cli(ctx, read_dir):
             plans.extend(p)
     if len(plans) > 0:
         ctx.ensure_object(dict)
-        ctx.obj['PLANS'] = plans
+        ctx.obj[KEYS.PLANS] = plans
 
 @cli.command('stats')
 @click.option('--target-dir', 'target_dir', prompt=True, required=True,
@@ -104,7 +104,7 @@ def cli(ctx, read_dir):
 @click.pass_context
 def stats(ctx, target_dir):
     if ctx.ensure_object(dict):
-        plans = ctx.obj['PLANS']
+        plans = ctx.obj[KEYS.PLANS]
         os.makedirs(target_dir, exist_ok=True)
         print_plans_stat(plans, nbins=30, save_graph=join(target_dir, FILENAMES.PLOT_LENGTH_FILENAME))
         print_action_distrib(plans, nbins=30, save_graph=join(target_dir, FILENAMES.PLOT_ACTIONS_FILENAME))
@@ -125,7 +125,7 @@ def stats(ctx, target_dir):
 def train_split(ctx, target_dir, max_plan_dim, train_percentage, create_validation):
     if ctx.ensure_object(dict):
         random.seed(43)
-        plans = ctx.obj['PLANS']
+        plans = ctx.obj[KEYS.PLANS]
 
         plans = [p for p in plans if len(p.actions) <= max_plan_dim]
         random.shuffle(plans)
