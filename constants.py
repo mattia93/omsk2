@@ -20,3 +20,21 @@ class FILENAMES:
     PLOT_ACTIONS_FILENAME = 'actions_frequency.png'
     PLOT_GOALS_FILENAME = 'goals_frequency.png'
     PLOT_LENGTH_FILENAME = 'plans_length.png'
+    PLANS_FILENAME = 'plans'
+    ACTION_DICT_FILENAME = 'dizionario'
+    GOALS_DICT_FILENEME = 'dizionario_goal'
+
+class CREATE_DATASET:
+    GOALS_NUMBER = 'Total goals: {0}'
+
+class HELPS:
+    CREATE_IF_NOT_EXISTS = "It's created if it does not exists."
+    XML_FOLDER_SRC = 'Folder that contains the XMLs files.'
+    PLANS_AND_DICT_FOLDER_OUT = "Folder where to store plans and dictionaries file."
+    ONEHOT_FLAG = 'Flag that applies the one-hot representation for the goals.'
+    PLOTS_FOLDER_OUT = 'Folder where to save the plots.'
+    TRAIN_TEST_VAL_FOLDER_OUT = 'Folder where to save the train, test and validation files.'
+    PLANS_AND_DICT_FOLDER_SRC = 'Folder that contains the plans and dictionaries pickles.'
+    MAX_PLAN_LENGTH = 'Maximum plan length accepted.'
+    TRAIN_PERCENTAGE = 'Percentage of plans used to create the training set.'
+    NO_VAL_FLAG = 'Flag used not to create the validation set'

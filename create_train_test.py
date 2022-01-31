@@ -1,11 +1,10 @@
-import pickle
 from os.path import join, dirname, basename
 from utils_functions import load_file, create_table, create_plot, save_file
 import numpy as np
 import random
 import click
 import os
-from constants import ERRORS, FILENAMES, CREATE_TRAIN_TEST
+from constants import ERRORS, FILENAMES, CREATE_TRAIN_TEST, HELPS
 
 
 
@@ -84,7 +83,7 @@ def print_goal_distrib(plans: list, save_graph: str = None, nbins: int = 10):
 @click.group()
 @click.pass_context
 @click.option('--read-dir', 'read_dir', type=click.STRING, prompt=True, required=True,
-               help='Folder that contains the plans and dictionaries pickles.')
+               help=HELPS.PLANS_AND_DICT_FOLDER_SRC)
 def cli(ctx, read_dir):
     file_names = ['plans']
     plans = list()
@@ -101,7 +100,7 @@ def cli(ctx, read_dir):
 
 @cli.command('stats')
 @click.option('--target-dir', 'target_dir', prompt=True, required=True,
-              type=click.STRING, help='Folder where to save the plots and data.')
+              type=click.STRING, help=f'{HELPS.PLOTS_FOLDER_OUT} {HELPS.CREATE_IF_NOT_EXISTS}')
 @click.pass_context
 def stats(ctx, target_dir):
     if ctx.ensure_object(dict):
@@ -116,13 +115,13 @@ def stats(ctx, target_dir):
 @cli.command('train-split')
 @click.pass_context
 @click.option('--target-dir', 'target_dir', prompt=True, required=True, type=click.STRING,
-              help='Folder where to save the train, test and validation files.')
+              help=f'{HELPS.TRAIN_TEST_VAL_FOLDER_OUT} {HELPS.CREATE_IF_NOT_EXISTS}')
 @click.option('--max-plan-dim', 'max_plan_dim', prompt=True, required=True, type=click.INT,
-              help='Maximum plan length accepted.')
+              help=HELPS.MAX_PLAN_LENGTH)
 @click.option('--train-perc', 'train_percentage', default=0.8, type=click.FloatRange(0, 1),
-              help='Percentage of plans used to create the training set.')
+              help=HELPS.TRAIN_PERCENTAGE)
 @click.option('--no-val', 'create_validation', is_flag=True, default=True,
-              help='Flag used not to create the validation set', flag_value=False)
+              help=HELPS.NO_VAL_FLAG, flag_value=False)
 def train_split(ctx, target_dir, max_plan_dim, train_percentage, create_validation):
     if ctx.ensure_object(dict):
         random.seed(43)
@@ -154,7 +153,7 @@ def train_split(ctx, target_dir, max_plan_dim, train_percentage, create_validati
         if len(test_plans) > 0:
             save_file(test_plans, target_dir, FILENAMES.TEST_PLANS_FILENAME)
         else:
-            print(ERRORS.STD_FILE_NOT_SAVED.format(ERRORS.TEST_PLANS_FILENAME))
+            print(ERRORS.STD_FILE_NOT_SAVED.format(FILENAMES.TEST_PLANS_FILENAME))
     else:
         print(ERRORS.MSG_ERROR_LOAD_PLANS)
 
