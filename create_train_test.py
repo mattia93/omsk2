@@ -1,16 +1,17 @@
 import pickle
 from os.path import join, dirname, basename
-from utils_functions import load_file, create_table, create_plot
+from utils_functions import load_file, create_table, create_plot, save_file
 import numpy as np
 import random
-import  matplotlib.pyplot as plt
-import getopt
-import sys
+import click
 import os
+from constants import ERRORS, FILENAMES, CREATE_TRAIN_TEST
+
+
 
 
 def print_plans_stat(plans: list, nbins: int = 10, save_graph: str = None) -> None:
-    print(f'Total plans : {len(plans)}')
+    print(CREATE_TRAIN_TEST.PLANS_NUMBER.format(len(plans)))
     plans_len = list()
     for p in plans:
         plans_len.append(len(p.actions))
@@ -27,6 +28,7 @@ def print_plans_stat(plans: list, nbins: int = 10, save_graph: str = None) -> No
 
     create_plot(plot_type='hist', target_dir=save_graph, input=plans_len, nbins=nbins, )
 
+
 def print_action_distrib(plans: list, save_graph: str = None, nbins: int =10) -> None:
     freq_action_dict = dict()
     for p in plans:
@@ -37,7 +39,7 @@ def print_action_distrib(plans: list, save_graph: str = None, nbins: int =10) ->
             else:
                 freq_action_dict[a] = 1
 
-    print(f'There are {len(freq_action_dict)} actions')
+    print(CREATE_TRAIN_TEST.ACTIONS_NUMBER.format(len(freq_action_dict)))
     v = list(freq_action_dict.values())
     headers = ['MIN', 'Q1', 'Q2', 'Q3', 'MAX']
     rows = list()
@@ -62,7 +64,7 @@ def print_goal_distrib(plans: list, save_graph: str = None, nbins: int = 10):
             else:
                 goals_dict[g] = 1
 
-    print(f'There are {len(goals_dict)} goals')
+    print(CREATE_TRAIN_TEST.GOALS_NUMBER.format(len(goals_dict)))
     v = list(goals_dict.values())
     headers = ['MIN', 'Q1', 'Q2', 'Q3', 'MAX']
     rows = list()
@@ -79,69 +81,63 @@ def print_goal_distrib(plans: list, save_graph: str = None, nbins: int = 10):
 
 
 
-
-
-
-if __name__ == '__main__':
-
-    plot_dir = './'
-    std_error_message = 'Error while loading {0}'
-    std_ok_message = '{0} loaded from {1}'
-    read_dir = './dataset_whole2_small'
+@click.group()
+@click.pass_context
+@click.option('--read-dir', 'read_dir', type=click.STRING, prompt=True, required=True,
+               help='Folder that contains the plans and dictionaries pickles.')
+def cli(ctx, read_dir):
     file_names = ['plans']
-    target_dir = 'dataset_whole2_small'
-    compute_stats = False
-    split_train_test = False
-    create_validation = True
-    max_plan_dim = 100
-    train_percentage = 0.8
-
-    argv = sys.argv[1:]
-    opts, args = getopt.getopt(argv, '', ['read-dir=', 'plot-dir=', 'target-dir=', 'stats',
-                                          'max-plan-dim=', 'train-percentage=',
-                                          'no-validation', 'train-split'])
-    for opt, arg in opts:
-        if opt == '--read-dir':
-            read_dir = arg
-        elif opt == '--plot-dir':
-            plot_dir = arg
-        elif opt == '--target-dir':
-            target_dir = arg
-        elif opt == '--stats':
-            compute_stats = True
-        elif opt == '--max-plan-dim':
-            max_plan_dim = int(arg)
-        elif opt == '--train-percentage':
-            train_percentage = float(arg)
-        elif opt == '--train-split':
-            split_train_test = True
-        elif opt == '--no-val':
-            create_validation = False
-
-
     plans = list()
     for file_name in file_names:
         f = join(read_dir, file_name)
         p = load_file(f,
-                       error=std_error_message.format(f),
-                       load_ok=std_ok_message.format(basename(f).capitalize(), dirname(f)))
+                      error=ERRORS.STD_ERROR_LOAD_FILE.format(f),
+                      load_ok=ERRORS.STD_LOAD_FILE_OK.format(basename(f).capitalize(), dirname(f)))
         if p is not None:
             plans.extend(p)
-    if len(plans) > 0 and compute_stats:
-        os.makedirs(plot_dir, exist_ok=True)
-        print_plans_stat(plans, nbins=30, save_graph=join(plot_dir, 'plans_length.png'))
-        print_action_distrib(plans, nbins=30, save_graph=join(plot_dir, 'action_frequency.png'))
-        print_goal_distrib(plans, nbins=30, save_graph=join(plot_dir, 'goal_frequency.png'))
+    if len(plans) > 0:
+        ctx.ensure_object(dict)
+        ctx.obj['PLANS'] = plans
 
-    if len(plans) > 0 and split_train_test:
+@cli.command('stats')
+@click.option('--target-dir', 'target_dir', prompt=True, required=True,
+              type=click.STRING, help='Folder where to save the plots and data.')
+@click.pass_context
+def stats(ctx, target_dir):
+    if ctx.ensure_object(dict):
+        plans = ctx.obj['PLANS']
+        os.makedirs(target_dir, exist_ok=True)
+        print_plans_stat(plans, nbins=30, save_graph=join(target_dir, FILENAMES.PLOT_LENGTH_FILENAME))
+        print_action_distrib(plans, nbins=30, save_graph=join(target_dir, FILENAMES.PLOT_ACTIONS_FILENAME))
+        print_goal_distrib(plans, nbins=30, save_graph=join(target_dir, FILENAMES.PLOT_GOALS_FILENAME))
+    else:
+        print(ERRORS.MSG_ERROR_LOAD_PLANS)
+
+@cli.command('train-split')
+@click.pass_context
+@click.option('--target-dir', 'target_dir', prompt=True, required=True, type=click.STRING,
+              help='Folder where to save the train, test and validation files.')
+@click.option('--max-plan-dim', 'max_plan_dim', prompt=True, required=True, type=click.INT,
+              help='Maximum plan length accepted.')
+@click.option('--train-perc', 'train_percentage', default=0.8, type=click.FloatRange(0, 1),
+              help='Percentage of plans used to create the training set.')
+@click.option('--no-val', 'create_validation', is_flag=True, default=True,
+              help='Flag used not to create the validation set', flag_value=False)
+def train_split(ctx, target_dir, max_plan_dim, train_percentage, create_validation):
+    if ctx.ensure_object(dict):
         random.seed(43)
+        plans = ctx.obj['PLANS']
+
         plans = [p for p in plans if len(p.actions) <= max_plan_dim]
         random.shuffle(plans)
         train_dim = int(train_percentage * len(plans))
+        print(CREATE_TRAIN_TEST.TRAIN_PLANS_NUMBER.format(train_dim))
         if create_validation:
             val_dim = int((1-train_percentage)/2 * len(plans))
+            print(CREATE_TRAIN_TEST.VALIDATION_PLANS_NUMBER.format(val_dim))
         else:
             val_dim = 0
+        print(CREATE_TRAIN_TEST.TEST_PLANS_NUMBER.format(len(plans)-val_dim-train_dim))
 
         train_plans = plans[:train_dim]
         val_plans = plans[train_dim:val_dim+train_dim]
@@ -150,16 +146,22 @@ if __name__ == '__main__':
         target_dir = join(target_dir, f'plans_max-plan-dim={max_plan_dim}'
                                       f'_train_percentage={train_percentage}')
         os.makedirs(target_dir, exist_ok=True)
-        with open(join(target_dir, 'train_plans'), 'wb') as f:
-            pickle.dump(train_plans, f)
-
+        save_file(train_plans, target_dir, FILENAMES.TRAIN_PLANS_FILENAME)
         if len(val_plans) > 0:
-            with open(join(target_dir, 'val_plans'), 'wb') as f:
-                pickle.dump(val_plans, f)
-
+            save_file(val_plans, target_dir, FILENAMES.VALIDATION_PLANS_FILENAME)
+        else:
+            print(ERRORS.STD_FILE_NOT_SAVED.format(FILENAMES.VALIDATION_PLANS_FILENAME))
         if len(test_plans) > 0:
-            with open(join(target_dir, 'test_plans'), 'wb') as f:
-                pickle.dump(test_plans, f)
+            save_file(test_plans, target_dir, FILENAMES.TEST_PLANS_FILENAME)
+        else:
+            print(ERRORS.STD_FILE_NOT_SAVED.format(ERRORS.TEST_PLANS_FILENAME))
+    else:
+        print(ERRORS.MSG_ERROR_LOAD_PLANS)
+
+
+
+if __name__ == '__main__':
+    cli()
 
 
 
