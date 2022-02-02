@@ -30,6 +30,9 @@ class CREATE_DATASET:
     GOALS_NUMBER = 'Total goals: {0}'
 
 class HELPS:
+    MODEL_NAME = 'Name of your model; it will also be the name of the Optuna Study.'
+    DB_DIR = 'Folder that contains the database where to store the Optuna Study.'
+    TRIALS = 'Number of Optuna trials.'
     INCREMENTAL_TESTS_FLAG = 'Flag for incremental tests.'
     PLANS_FOLDER_SRC = 'Folder that contains the train, test and validation plans.'
     MIN_PLAN_PERCENTAGE = 'Minimum percentage of actions per plan considered.'
@@ -52,6 +55,9 @@ class HELPS:
 
 
 class KEYS:
+    MODEL_NAME = 'MODEL_NAME'
+    STUDY = 'STUDY'
+    TARGET_DIR = 'TARGET_DIR'
     MAX_PLAN_DIM = 'MAX_PLAN_DIM'
     MIN_PLAN_PERC = 'MIN_PLAN_PERC'
     MAX_PLAN_PERC = 'MAX_PLAN_PERC'
