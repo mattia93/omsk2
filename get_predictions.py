@@ -25,7 +25,7 @@ from constants import HELPS
               show_default=True)
 @click.option('--plan-perc', 'plan_perc', required=True, type=click.FloatRange(0, 1), help=HELPS.PLAN_PERCENTAGE,
               prompt=True)
-@click.option('--max-plan-dim', 'max_plan_dim', reuired=True, type=click.INT, prompt=True, help=HELPS.MAX_PLAN_LENGTH)
+@click.option('--max-plan-dim', 'max_plan_dim', required=True, type=click.INT, prompt=True, help=HELPS.MAX_PLAN_LENGTH)
 @click.option('--batch-size', 'batch_size', type=click.INT, default=64, show_default=True, help=HELPS.BATCH_SIZE)
 @click.option('--target-dir', 'target_dir', type=click.STRING, required=True, prompt=True, help=HELPS.PRED_DIR_OUT)
 def run(read_dict_dir, read_test_plans_dir, model_path, max_plan_perc, plan_perc,
