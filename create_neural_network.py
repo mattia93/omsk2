@@ -1,30 +1,17 @@
 import os
-
 import click
 import numpy as np
-import pickle
-import sys
-import random
-from pathlib import Path
-
 from constants import HELPS, ERRORS, KEYS, FILENAMES
-import oneHot_deep
-from matplotlib import pyplot as plt
 import matplotlib
 from plan_generator import PlanGenerator, PlanGeneratorMultiPerc
 from params_generator import ParamsGenerator
-
 matplotlib.use('agg')
 from sklearn import metrics
-import getopt
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Input
-from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.layers import Dense, LSTM, Embedding, GRU, Bidirectional
-# from AttentionMechanism import AttentionL
 from attention_extraction_layers import AttentionWeights, ContextVector
 from tensorflow.keras.optimizers import SGD, Adam
-from tensorflow.keras.utils import Sequence
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.regularizers import l2, l1, l1_l2
 from tensorflow_addons.losses import SigmoidFocalCrossEntropy
@@ -446,7 +433,7 @@ def network_results(ctx, incremental_tests):
 @click.pass_context
 @click.option('--model-name', 'model_name', type=click.STRING, required=True, prompt=True,
               help=HELPS.MODEL_NAME)
-@click.option('--trials', 'n_trials', default=20, type=click.INT, help=HELPS.TRIALS)
+@click.option('--trials', 'n_trials', default=20, type=click.INT, help=HELPS.TRIALS, show_default=True)
 @click.option('--db-dir', 'db_dir', type=click.STRING, required=True, prompt=True, help=HELPS.DB_DIR)
 def optuna_train(ctx, model_name, db_dir, n_trials):
 

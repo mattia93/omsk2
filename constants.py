@@ -30,6 +30,10 @@ class CREATE_DATASET:
     GOALS_NUMBER = 'Total goals: {0}'
 
 class HELPS:
+    PRED_DIR_OUT = 'Folder where to save the predictions.'
+    PLAN_PERCENTAGE = 'Percentage of actions per plan.'
+    TEST_PLANS_DIR_SRC = 'Folder that contains the test plans.'
+    MODEL_SRC = 'Path of the model file to use.'
     MODEL_NAME = 'Name of your model; it will also be the name of the Optuna Study.'
     DB_DIR = 'Folder that contains the database where to store the Optuna Study.'
     TRIALS = 'Number of Optuna trials.'
