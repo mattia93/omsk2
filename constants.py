@@ -30,6 +30,7 @@ class CREATE_DATASET:
     GOALS_NUMBER = 'Total goals: {0}'
 
 class HELPS:
+    PRED_DIR_SRC = 'Folder that contains the prediction file(s)'
     PRED_DIR_OUT = 'Folder where to save the predictions.'
     PLAN_PERCENTAGE = 'Percentage of actions per plan.'
     TEST_PLANS_DIR_SRC = 'Folder that contains the test plans.'

@@ -1,10 +1,10 @@
 import os
-
-from pandas import DataFrame
+import click
 import pickle
 import numpy as np
 from sklearn.metrics import classification_report
-import sys, getopt
+from constants import HELPS
+
 
 def get_used_output_list(y_true_list: np.ndarray) -> np.ndarray:
     used_output = np.zeros((len(y_true_list[0]),), dtype=bool)
@@ -28,8 +28,9 @@ def get_uniqueness_values(goals_list_bin: np.ndarray) -> list:
     uniq_values = [ n_goals/el if el != 0 else 0 for el in uniq_values]
     return uniq_values
 
-def get_contributes(goals_list_bin: np.ndarray, pred: np.ndarray, y_true: np.ndarray, verbose: bool = False,
-                    used_output_index: np.ndarray = None, uniq_values: np.ndarray = None) -> np.ndarray:
+def get_contributes(goals_list_bin: np.ndarray, pred: np.ndarray, y_true: np.ndarray, y_true_list: list,
+                    verbose: bool = False, used_output_index: np.ndarray = None,
+                    uniq_values: np.ndarray = None) -> np.ndarray:
     contributes = None
     if used_output_index is None:
         used_output_index = get_used_output_list(y_true_list)
@@ -77,8 +78,8 @@ def get_predictions(y_pred_list: np.ndarray, y_true_list: np.ndarray, goals_list
             y_pred = [1 if el > 0.5 else 0 for el in y_pred]
         y_true = y_true_list[i]
         contribute = get_contributes(goals_list_bin=goals_list_bin, pred=y_pred, y_true=y_true,
-                                          used_output_index=used_output_index, uniq_values=uniq_values)
-
+                                     used_output_index=used_output_index, uniq_values=uniq_values,
+                                     y_true_list=y_true_list)
         index_max = get_max(contribute)
 
 
@@ -101,27 +102,13 @@ def get_predictions(y_pred_list: np.ndarray, y_true_list: np.ndarray, goals_list
     return goal_true, goal_preds
 
 
-if __name__ == '__main__':
-    np.random.seed(47)
-    argv = sys.argv[1:]
-    opts, args = getopt.getopt(argv, 'r:n:')
-    read_folder = '.'
-    output_folder = '.'
-    filename = None
-
-    for opt, arg in opts:
-        if opt == '-r':
-            read_folder = arg
-        elif opt == '-n':
-             filename = arg
-
-    if filename is None:
-        files = os.listdir(read_folder)
-    else:
-        files = [filename]
-
+@click.command()
+@click.option('--read-pred-dir', 'read_pred_dir', type=click.STRING, prompt=True, help=HELPS.PRED_DIR_SRC,
+              required=True)
+def run(read_pred_dir):
+    files = os.listdir(read_pred_dir)
     for file in files:
-        with open(os.path.join(read_folder, file), 'rb') as rf:
+        with open(os.path.join(read_pred_dir, file), 'rb') as rf:
             pred_dict = pickle.load(rf)
             y_pred_list = pred_dict['y_test_pred']
             y_true_list = pred_dict['y_test_true']
@@ -142,6 +129,12 @@ if __name__ == '__main__':
         y_true, y_pred = get_predictions(y_pred_list=y_pred_list, y_true_list=y_true_list,
                                          goals_list_bin=goals_list_bin, use_threshold=False)
         print(classification_report(y_true=y_true, y_pred=y_pred))
+
+
+if __name__ == '__main__':
+    run()
+
+
 
 
 
