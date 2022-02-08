@@ -22,6 +22,7 @@ from typing import Union
 from tensorflow.keras.models import load_model
 import optuna
 from optuna.samplers import TPESampler
+from tensorflow.keras.metrics import Precision, Recall
 
 
 def build_network_single_fact(generator: PlanGenerator,
@@ -76,7 +77,8 @@ def build_network_single_fact(generator: PlanGenerator,
     if loss_function == 'SigmoidFocalCrossEntropy':
         loss_function = SigmoidFocalCrossEntropy()
     model = Model(inputs=inputs, outputs=outputs, name=model_name)
-    model.compile(optimizer=optimizer, loss=loss_function)
+    model.compile(optimizer=optimizer, loss=loss_function, metrics=['accuracy',Precision(name='precision'),
+                                                                    Recall(name='recall')])
 
     return model
 
@@ -297,7 +299,7 @@ def run():
               help=HELPS.DICT_FOLDER_SRC, type=click.STRING)
 @click.option('--epochs', default=50, help=HELPS.EPOCHS, type=click.INT, show_default=True)
 @click.option('--min-plan-perc', 'min_plan_percentage', default=0.3, type=click.FloatRange(0, 1),
-              help=HELPS.MIN_PLAN_PERCENTAGE)
+              help=HELPS.MIN_PLAN_PERCENTAGE, show_default=True)
 @click.option('--read-plans-dir', 'read_plans_dir', required=True, prompt=True,
               help=HELPS.PLANS_FOLDER_SRC, type=click.STRING)
 @click.option('--max-plan-dim', 'max_plan_dim', required=True, prompt=True, help=HELPS.MAX_PLAN_LENGTH, type=click.INT)
