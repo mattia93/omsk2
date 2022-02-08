@@ -1,11 +1,10 @@
 import os
-
 import numpy as np
 import utils
-import sys
-import save_arrays
 import oneHot_deep
-import getopt
+import click
+from utils_functions import save_file
+from constants import CREATE_DATASET, HELPS, FILENAMES
 
 
 def create_dictionary(plans : list, oneHot : bool = True):
@@ -21,7 +20,7 @@ def create_dictionary_goals_fixed(plans):
     for p in plans:
         if p.goals not in goals:
             goals.append(p.goals)
-    print("ci sono:"+str(len(goals))+" goal")
+    print(CREATE_DATASET.GOALS_NUMBER.format(len(goals)))
     dizionario_goal = oneHot_deep.create_dictionary_goals(goals)
     dizionario_goal = oneHot_deep.shuffle_dictionary(dizionario_goal)
     oneHot_deep.completa_dizionario(dizionario_goal)
@@ -34,43 +33,36 @@ def create_dictionary_goals_not_fixed(plans):
         for fact in p.goals:
             if fact not in goals:
                 goals.append(fact)
-    print("ci sono:"+str(len(goals))+" goal")
+    print(CREATE_DATASET.GOALS_NUMBER.format(len(goals)))
     dizionario_goal = oneHot_deep.create_dictionary_goals(goals)
     dizionario_goal = oneHot_deep.shuffle_dictionary(dizionario_goal)
     oneHot_deep.completa_dizionario(dizionario_goal)
     return dizionario_goal
 
 
-if __name__ == '__main__':
-    argv = sys.argv[1:]
-    np.random.seed(47)
-    opts, args = getopt.getopt(argv, "r:s:a:p:vh")
-    read_folder, save_folder, max_actions, perc_dataset = 'xml_prova', 'dataset_prova', 100, 0.8
-    use_validation = False
-    use_onehot = False
-    for opt, arg in opts:
-        if opt == "-r":
-            read_folder = arg
-        elif opt == "-s":
-            save_folder = arg
-        elif opt == "-a":
-            max_actions = int(arg)
-        elif opt == "-p":
-            perc_dataset = float(arg)
-        elif opt == '-v':
-            use_validation = True
-        elif opt == '-h':
-            use_onehot = True
+@click.command()
+@click.option('--read-dir', 'read_dir', prompt=True, required=True, type=click.STRING,
+              help=HELPS.XML_FOLDER_SRC)
+@click.option('--target-dir', 'target_dir', prompt=True, required=True,
+              type=click.STRING, help=f'{HELPS.PLANS_AND_DICT_FOLDER_OUT} {HELPS.CREATE_IF_NOT_EXISTS}')
+@click.option('--onehot', is_flag=True, default=False, help=HELPS.ONEHOT_FLAG)
+def run(read_dir, target_dir, onehot):
 
-    os.makedirs(save_folder, exist_ok=True)
-            
-    plans = utils.get_plans(read_folder, max_actions)
-    dizionario = create_dictionary(plans, use_onehot)
+    os.makedirs(target_dir, exist_ok=True)
+
+    plans = utils.get_all_plans(read_dir)
+    dizionario = create_dictionary(plans, onehot)
     dizionario_goal = create_dictionary_goals_not_fixed(plans)
 
-    save_arrays.save(plans, save_folder + '/plans')
-    save_arrays.save(dizionario, save_folder + '/dizionario')
-    save_arrays.save(dizionario_goal, save_folder + '/dizionario_goal')
+    save_file(plans, target_dir, FILENAMES.PLANS_FILENAME)
+    save_file(dizionario, target_dir, FILENAMES.ACTION_DICT_FILENAME)
+    save_file(dizionario_goal, target_dir, FILENAMES.GOALS_DICT_FILENEME)
+
+if __name__ == '__main__':
+    np.random.seed(47)
+    run()
+
+
 
 
 

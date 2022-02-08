@@ -3,9 +3,10 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 import numpy as np
 from os.path import join
+import os
 
 
-def load_files(read_file : str,
+def load_file(read_file : str,
                load_ok : str = 'File loaded',
                error : str = f'Error while loading file') -> list:
     try:
@@ -25,10 +26,26 @@ def load_from_pickles(read_dir: str, files: list) -> list:
 
     to_return = []
     for file_name in files:
-        to_return.append(load_files(join(read_dir, file_name),
+        to_return.append(load_file(join(read_dir, file_name),
                          load_ok=MSG_OK.format(file_name, read_dir),
                          error=MSG_ERROR.format(file_name, read_dir)))
     return to_return
+
+
+def save_file(o: object, target_dir: str, filename: str) -> None:
+    MSG_OK = '{0} saved in {1}'
+    MSG_ERROR = 'Could not save {0} in {1}'
+
+    os.makedirs(target_dir, exist_ok=True)
+    try:
+        with open(join(target_dir, filename), 'wb') as wf:
+            pickle.dump(o, wf)
+            wf.close()
+        print(MSG_OK.format(filename, target_dir))
+    except pickle.PicklingError:
+        print(MSG_ERROR.format(filename, target_dir))
+
+    return
 
 
 def create_table(title: str, headers : list, rows : list, just : int = 10, precision : int = 2) -> list:

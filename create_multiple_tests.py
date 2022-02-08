@@ -1,6 +1,6 @@
 import pickle
 from os.path import join, dirname, basename
-from utils_functions import load_files, create_table, create_plot
+from utils_functions import load_file, create_table, create_plot
 import numpy as np
 import random
 import  matplotlib.pyplot as plt
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     plans = list()
     for file_name in file_names:
         f = join(read_dir, file_name)
-        p = load_files(f,
+        p = load_file(f,
                        error=std_error_message.format(f),
                        load_ok=std_ok_message.format(basename(f).capitalize(), dirname(f)))
         if p is not None:
