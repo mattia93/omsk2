@@ -7,14 +7,12 @@ class ERRORS:
     STD_FILE_NOT_SAVED = '{0} was not saved'
 
 class CREATE_TRAIN_TEST:
-    PLANS_NUMBER = 'Total plans : {0}'
-    GOALS_NUMBER = 'Total goals: {0}'
-    ACTIONS_NUMBER = 'Total actions: {0}'
     TRAIN_PLANS_NUMBER = 'Total train plans: {0}'
     TEST_PLANS_NUMBER = 'Total test plans: {0}'
     VALIDATION_PLANS_NUMBER = 'Total validation plans: {0}'
 
 class FILENAMES:
+    STATS_FILENAME = 'stats.txt'
     TRAIN_PLANS_FILENAME = 'train_plans'
     VALIDATION_PLANS_FILENAME = 'val_plans'
     TEST_PLANS_FILENAME = 'test_plans'
@@ -27,9 +25,17 @@ class FILENAMES:
     NETWORK_PLOTS_FOLDER = 'plots'
 
 class CREATE_DATASET:
+    GOALS_TABLE_TITLE = 'Goals frequency'
+    ACTIONS_TABLE_TITLE = 'Actions frequency'
+    PLANS_TABLE_TITLE = 'Plans length'
+    PLANS_NUMBER = 'Total plans : {0}'
     GOALS_NUMBER = 'Total goals: {0}'
+    ACTIONS_NUMBER = 'Total actions: {0}'
+    TABLE_HEADERS = ['MIN', 'Q1', 'Q2', 'Q3', 'MAX']
+    NBINS = 50
 
 class HELPS:
+    SAVE_STATS_FLAG = 'Flag for creating the file stats.txt that saves the stats in the plots directory'
     PRED_DIR_SRC = 'Folder that contains the prediction file(s)'
     PRED_DIR_OUT = 'Folder where to save the predictions.'
     PLAN_PERCENTAGE = 'Percentage of actions per plan.'
