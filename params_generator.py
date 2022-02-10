@@ -1,6 +1,5 @@
 from typing import Union, Any
 import random
-from tensorflow.keras.losses import Loss, BinaryCrossentropy
 import numpy as np
 from pandas import DataFrame
 
@@ -114,7 +113,7 @@ class ParamsGenerator:
         self,
         model_name: str,
         recurrent_type: Union[str, set] = "lstm",
-        loss_function: Union[str, set, Loss] = "binary_crossentropy",
+        loss_function: Union[str, set] = "binary_crossentropy",
         **kwargs
     ):
         self.__init_table()
