@@ -4,7 +4,7 @@ import random
 
 def add_action_dictionary(action, dictionary):
     if not action in dictionary:
-        dictionary[action] = len(dictionary) +1
+        dictionary[action] = len(dictionary) + 1
 
 
 def oneHot(action, dictionary):
@@ -31,7 +31,7 @@ def add_goal_dictionary(g, dictionary):
         goal = goal + subgoal
     if goal not in dictionary:
         dictionary[goal] = len(dictionary)
-        
+
 
 def add_goal_dictionary2(g, dictionary):
     g.sort()
@@ -47,18 +47,22 @@ def create_dictionary_goals(goal):
     for g in goal:
         add_goal_dictionary(g, dictionary)
     return dictionary
-    
+
 
 def create_dictionary_goals2(goal):
     dictionary = {}
     for g in goal:
         add_goal_dictionary2(g, dictionary)
     return dictionary
-    
 
 
 def shuffle_dictionary(dictionary):
-    return dict(zip(list(dictionary.keys()), random.sample(list(dictionary.values()), len(dictionary))))
+    return dict(
+        zip(
+            list(dictionary.keys()),
+            random.sample(list(dictionary.values()), len(dictionary)),
+        )
+    )
 
 
 def oneHot_plans(plans, dictionary):
