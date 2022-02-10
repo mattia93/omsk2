@@ -28,6 +28,7 @@ class FILENAMES:
     GOALS_DICT_FILENEME = "dizionario_goal"
     NETWORK_PLOTS_FOLDER = "plots"
     PLANS_FOLDER = "plans_max-plan-dim={0}_train_percentage={1}"
+    PARAMS_TEMPLATE_FILENAME = "params_template"
 
 
 class CREATE_DATASET:
@@ -42,8 +43,10 @@ class CREATE_DATASET:
 
 
 class HELPS:
-    SAVE_STATS_FLAG = "Flag for creating the file stats.txt that saves the stats in the plots directory"
-    PRED_DIR_SRC = "Folder that contains the prediction file(s)"
+    PARAMETERS_NUMBER = "Number of parameters templates to generate."
+    PARAMS_TEMPLATE_DIR_OUT = "Folder where to store the created template file(s)."
+    SAVE_STATS_FLAG = "Flag for creating the file stats.txt that saves the stats in the plots directory."
+    PRED_DIR_SRC = "Folder that contains the prediction file(s)."
     PRED_DIR_OUT = "Folder where to save the predictions."
     PLAN_PERCENTAGE = "Percentage of actions per plan."
     TEST_PLANS_DIR_SRC = "Folder that contains the test plans."
@@ -91,3 +94,7 @@ class KEYS:
     MODEL_DIR = "MODEL_DIR"
     PARAMS = "PARAMS"
     PLANS = "PLANS"
+
+
+class PARAMS_GEN:
+    DEFAULT_MODEL_NAME = "MODEL_NAME_TO_CHANGE"

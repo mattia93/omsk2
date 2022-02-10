@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 import numpy as np
 from os.path import join
+import json
 import os
 
 
@@ -10,16 +11,20 @@ def load_file(
     read_file: str,
     load_ok: str = "File loaded",
     error: str = f"Error while loading file",
-) -> list:
+) -> object:
     try:
-        with open(read_file, "rb") as rf:
-            plans = pickle.load(rf)
-            print(load_ok)
+        if read_file.endswith(".json") or read_file.endswith(".JSON"):
+            with open(read_file, "r") as rf:
+                o = json.load(rf)
+        else:
+            with open(read_file, "rb") as rf:
+                o = pickle.load(rf)
+        print(load_ok)
     except FileNotFoundError:
         print(error)
-        plans = None
+        o = None
 
-    return plans
+    return o
 
 
 def load_from_pickles(read_dir: str, files: list) -> list:
@@ -38,15 +43,21 @@ def load_from_pickles(read_dir: str, files: list) -> list:
     return to_return
 
 
-def save_file(o: object, target_dir: str, filename: str) -> None:
+def save_file(
+    o: object, target_dir: str, filename: str, json_format: bool = False
+) -> None:
     MSG_OK = "{0} saved in {1}"
     MSG_ERROR = "Could not save {0} in {1}"
 
     os.makedirs(target_dir, exist_ok=True)
     try:
-        with open(join(target_dir, filename), "wb") as wf:
-            pickle.dump(o, wf)
-            wf.close()
+        if json_format or filename.endswith(".json") or filename.endswith(".JSON"):
+            with open(join(target_dir, filename), "w") as wf:
+                json.dump(o, wf, indent=4)
+        else:
+            with open(join(target_dir, filename), "wb") as wf:
+                pickle.dump(o, wf)
+        wf.close()
         print(MSG_OK.format(filename, target_dir))
     except pickle.PicklingError:
         print(MSG_ERROR.format(filename, target_dir))
