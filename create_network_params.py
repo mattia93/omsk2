@@ -1,6 +1,7 @@
 import os
 from params_generator import ParamsGenerator
 from os.path import join
+from utils_functions import save_file
 import json
 from constants import HELPS, PARAMS_GEN, FILENAMES
 import click
@@ -31,11 +32,9 @@ def run(target_dir, num_experiments):
     p = ParamsGenerator(model_name)
 
     params_list = p.generate(num_experiments)
-    for i in range(len(params_list)):
-        params_file = join(target_dir, f"{FILENAMES.PARAMS_TEMPLATE_FILENAME}_{i}.json")
-        with open(params_file, "w") as f:
-            json.dump(dict(params_list[i]), f, indent=4)
-            f.close()
+    for i, params in enumerate(params_list):
+        params_file = f"{FILENAMES.PARAMS_TEMPLATE_FILENAME}_{i}.json"
+        save_file(params, target_dir, params_file, json_format=True)
 
 
 if __name__ == "__main__":
