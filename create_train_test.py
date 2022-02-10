@@ -4,7 +4,7 @@ import numpy as np
 import random
 import click
 import os
-from constants import ERRORS, FILENAMES, CREATE_TRAIN_TEST, HELPS, KEYS
+from constants import ERRORS, FILENAMES, CREATE_TRAIN_TEST, HELPS
 
 
 @click.command()
@@ -44,8 +44,7 @@ def run(read_dir, target_dir, max_plan_dim, train_percentage, create_validation)
         val_plans = plans[train_dim:val_dim + train_dim]
         test_plans = plans[val_dim + train_dim:]
 
-        target_dir = join(target_dir, f'plans_max-plan-dim={max_plan_dim}'
-                                      f'_train_percentage={train_percentage}')
+        target_dir = join(target_dir, FILENAMES.PLANS_FOLDER.format(max_plan_dim,train_percentage))
         os.makedirs(target_dir, exist_ok=True)
         save_file(train_plans, target_dir, FILENAMES.TRAIN_PLANS_FILENAME)
         if len(val_plans) > 0:

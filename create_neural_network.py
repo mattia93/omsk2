@@ -291,7 +291,8 @@ def run():
 
 @run.group('train-model')
 @click.pass_context
-@click.option('--target-dir', 'target_dir', required=True, prompt=True, help=HELPS.MODEL_DIR_OUT, type=click.STRING)
+@click.option('--target-dir', 'target_dir', required=True, prompt=True, type=click.STRING,
+              help=f'{HELPS.MODEL_DIR_OUT} {HELPS.CREATE_IF_NOT_EXISTS}')
 @click.option('--plan-perc', 'max_plan_percentage', required=True, prompt=True, help=HELPS.MAX_PLAN_PERCENTAGE,
               type=click.FloatRange(0, 1))
 @click.option('--batch-size', 'batch_size', default=64, type=click.INT, help=HELPS.BATCH_SIZE, show_default=True)
@@ -361,10 +362,11 @@ def network_train(ctx):
         max_plan_dim = ctx.obj[KEYS.MAX_PLAN_DIM]
 
         model_name = params['model_name']
-        plot_dir = join(model_dir, 'plots')
+        plot_dir = join(model_dir, FILENAMES.NETWORK_PLOTS_FOLDER)
         os.makedirs(plot_dir, exist_ok=True)
 
-        [train_plans, val_plans] = load_from_pickles(read_plans_dir, ['train_plans', 'val_plans'])
+        [train_plans, val_plans] = load_from_pickles(read_plans_dir, [FILENAMES.TRAIN_PLANS_FILENAME,
+                                                                      FILENAMES.VALIDATION_PLANS_FILENAME])
         if train_plans is not None and dizionario is not None and dizionario_goal is not None:
             train_generator = PlanGeneratorMultiPerc(train_plans, dizionario, dizionario_goal,
                                                      batch_size, max_plan_dim, min_plan_percentage, max_plan_percentage)
@@ -458,7 +460,8 @@ def optuna_train(ctx, model_name, db_dir, n_trials):
         ctx.obj[KEYS.STUDY] = study
         ctx.obj[KEYS.MODEL_NAME] = model_name
 
-        [train_plans, val_plans] = load_from_pickles(read_plans_dir, ['train_plans', 'val_plans'])
+        [train_plans, val_plans] = load_from_pickles(read_plans_dir, [FILENAMES.TRAIN_PLANS_FILENAME,
+                                                                      FILENAMES.VALIDATION_PLANS_FILENAME])
         study.optimize(
             lambda trial: objective(trial=trial,
                                     dizionario=dizionario,
@@ -475,7 +478,7 @@ def optuna_train(ctx, model_name, db_dir, n_trials):
             gc_after_trial=True)
 
         plot_dir = join(target_dir, model_name)
-        plot_dir = join(plot_dir, 'plots')
+        plot_dir = join(plot_dir, FILENAMES.NETWORK_PLOTS_FOLDER)
         os.makedirs(plot_dir, exist_ok=True)
 
         fig = optuna.visualization.plot_optimization_history(study)
