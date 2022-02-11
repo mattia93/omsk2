@@ -24,13 +24,6 @@ def get_representation(y_true: np.ndarray, used_output_index: np.ndarray) -> str
     return representation.strip()[:-1]
 
 
-def get_uniqueness_values(goals_list_bin: np.ndarray) -> list:
-    n_goals = len(goals_list_bin)
-    uniq_values = np.sum(goals_list_bin, axis=0)
-    uniq_values = [n_goals / el if el != 0 else 0 for el in uniq_values]
-    return uniq_values
-
-
 def get_contributes(
     goals_list_bin: np.ndarray,
     pred: np.ndarray,
@@ -38,22 +31,20 @@ def get_contributes(
     y_true_list: list,
     verbose: bool = False,
     used_output_index: np.ndarray = None,
-    uniq_values: np.ndarray = None,
 ) -> np.ndarray:
     contributes = None
     if used_output_index is None:
         used_output_index = get_used_output_list(y_true_list)
-    if uniq_values is None:
-        uniq_values = get_uniqueness_values(goals_list_bin)
     for i in range(len(goals_list_bin)):
-        value = np.dot(np.multiply(pred, goals_list_bin[i]), np.transpose(uniq_values))
+        value = sum(np.multiply(pred, goals_list_bin[i]))
         if contributes is None:
-            contributes = np.multiply(np.multiply(pred, goals_list_bin[i]), uniq_values)
+
+            contributes = np.multiply(pred, goals_list_bin[i])
         else:
             contributes = np.vstack(
                 [
                     contributes,
-                    np.multiply(np.multiply(pred, goals_list_bin[i]), uniq_values),
+                    np.multiply(pred, goals_list_bin[i]),
                 ]
             )
         if verbose:
@@ -68,7 +59,7 @@ def get_contributes(
                 [
                     f"{j[0]}:{value:.5f}"
                     for j, value in np.ndenumerate(
-                        np.multiply(np.multiply(pred, goals_list_bin[i]), uniq_values)
+                        np.multiply(pred, goals_list_bin[i])
                     )
                     if value > 0
                 ]
@@ -103,7 +94,6 @@ def get_predictions(
     used_output_index = get_used_output_list(y_true_list)
     goal_preds = list()
     goal_true = list()
-    uniq_values = get_uniqueness_values(goals_list_bin)
     single_count = 0
     draw_count = 0
     zeros_count = 0
@@ -116,7 +106,6 @@ def get_predictions(
             pred=y_pred,
             y_true=y_true,
             used_output_index=used_output_index,
-            uniq_values=uniq_values,
             y_true_list=y_true_list,
         )
         index_max = get_max(contribute)
@@ -169,7 +158,6 @@ def run(read_pred_dir):
             for number in numbers:
                 number = int(number.strip())
                 goals_list_bin[row, number] = 1
-        uniq_values = get_uniqueness_values(goals_list_bin=goals_list_bin)
         y_true, y_pred = get_predictions(
             y_pred_list=y_pred_list,
             y_true_list=y_true_list,
