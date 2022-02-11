@@ -75,5 +75,5 @@ def completa_dizionario(dictionary):
     dim = len(dictionary)
     for key, value in dictionary.items():
         one_hot = np.zeros(dim)
-        one_hot[value-1] = 1
+        one_hot[value - 1] = 1
         dictionary[key] = one_hot

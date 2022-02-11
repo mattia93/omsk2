@@ -1,8 +1,10 @@
 import os
-import click
 import pickle
+
+import click
 import numpy as np
 from sklearn.metrics import classification_report
+
 from constants import HELPS
 
 
@@ -58,9 +60,7 @@ def get_contributes(
             print(
                 [
                     f"{j[0]}:{value:.5f}"
-                    for j, value in np.ndenumerate(
-                        np.multiply(pred, goals_list_bin[i])
-                    )
+                    for j, value in np.ndenumerate(np.multiply(pred, goals_list_bin[i]))
                     if value > 0
                 ]
             )

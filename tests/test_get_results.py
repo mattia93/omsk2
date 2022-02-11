@@ -1,5 +1,12 @@
-from get_results import get_used_output_list, get_representation, get_predictions, get_contributes, get_max
+from get_results import (
+    get_used_output_list,
+    get_representation,
+    get_predictions,
+    get_contributes,
+    get_max,
+)
 import numpy as np
+
 
 def test_get_used_output_list():
 
@@ -24,8 +31,8 @@ def test_get_representation():
     goals_list_repr = list(set(goals))
 
     assert len(goals_list_repr) == 2
-    assert '0, 1, 2' in goals_list_repr
-    assert '1, 2, 3' in goals_list_repr
+    assert "0, 1, 2" in goals_list_repr
+    assert "1, 2, 3" in goals_list_repr
 
 
 def test_get_predictions():
@@ -33,8 +40,8 @@ def test_get_predictions():
     y_pred_list = [[0.4, 0.7, 0.8, 0.1], [0.4, 0.7, 0.8, 0.1]]
 
     goals_list_repr = list()
-    goals_list_repr.append('0, 1, 2')
-    goals_list_repr.append('1, 2, 3')
+    goals_list_repr.append("0, 1, 2")
+    goals_list_repr.append("1, 2, 3")
 
     goals_list_bin = np.zeros((len(goals_list_repr), len(y_true_list[0])))
     for row, goal in enumerate(goals_list_repr):
@@ -50,8 +57,8 @@ def test_get_predictions():
         use_threshold=False,
     )
 
-    assert y_true == ['0, 1, 2', '1, 2, 3']
-    assert y_pred == ['0, 1, 2', '0, 1, 2']
+    assert y_true == ["0, 1, 2", "1, 2, 3"]
+    assert y_pred == ["0, 1, 2", "0, 1, 2"]
 
 
 def test_get_contributes():
@@ -59,8 +66,8 @@ def test_get_contributes():
     y_pred_list = [[0.4, 0.8, 0.8, 0.1], [0.4, 0.8, 0.8, 0.1]]
 
     goals_list_repr = list()
-    goals_list_repr.append('0, 1, 2')
-    goals_list_repr.append('1, 2, 3')
+    goals_list_repr.append("0, 1, 2")
+    goals_list_repr.append("1, 2, 3")
 
     goals_list_bin = np.zeros((len(goals_list_repr), len(y_true_list[0])))
     for row, goal in enumerate(goals_list_repr):
@@ -68,7 +75,6 @@ def test_get_contributes():
         for number in numbers:
             number = int(number.strip())
             goals_list_bin[row, number] = 1
-
 
     c = get_contributes(goals_list_bin, y_pred_list[0], y_true_list[0], y_true_list)
     assert c[0][0] == y_pred_list[0][0]
@@ -96,5 +102,3 @@ def test_get_max():
     contributes = []
     m = get_max(contributes)
     assert len(m) == 0
-
-
