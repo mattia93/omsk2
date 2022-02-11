@@ -3,7 +3,7 @@ import click
 import numpy as np
 from constants import HELPS, ERRORS, KEYS, FILENAMES
 import matplotlib
-from plan_generator import PlanGenerator, PlanGeneratorMultiPerc
+from plan_generator import PlanGeneratorMultiPerc
 from params_generator import ParamsGenerator
 matplotlib.use('agg')
 from sklearn import metrics
@@ -25,7 +25,7 @@ from optuna.samplers import TPESampler
 from tensorflow.keras.metrics import Precision, Recall
 
 
-def build_network_single_fact(generator: PlanGenerator,
+def build_network_single_fact(generator: PlanGeneratorMultiPerc,
                               embedding_params: dict = None,
                               hidden_layers: int = 1,
                               regularizer_params: dict = None,
@@ -106,11 +106,11 @@ def print_network_details(model: Model, params: dict, save_file: str = None) -> 
 
 
 def train_network(model: Model,
-                  train_generator: PlanGenerator,
+                  train_generator: PlanGeneratorMultiPerc,
                   epochs: int = 3,
                   verbose: int = 2,
                   callbacks: list = None,
-                  validation_generator: PlanGenerator = None) -> dict:
+                  validation_generator: PlanGeneratorMultiPerc = None) -> dict:
     history = model.fit(x=train_generator,
                         validation_data=validation_generator,
                         epochs=epochs,
@@ -155,7 +155,7 @@ def print_metrics(y_true: list, y_pred: list, dizionario_goal: dict, save_dir: s
     return [accuracy, hamming_loss]
 
 
-def get_model_predictions(model: Model, test_generator: PlanGenerator) -> list:
+def get_model_predictions(model: Model, test_generator: PlanGeneratorMultiPerc) -> list:
     y_pred = list()
     y_true = list()
     for i in range(test_generator.__len__()):
