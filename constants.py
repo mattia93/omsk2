@@ -43,6 +43,16 @@ class CREATE_DATASET:
 
 
 class HELPS:
+    SOLVER_SOLUTIONS = "Name of the solver used for generating the solutions."
+    LPG_SOLVER_FILE_SRC = "Path to LPG solver."
+    XML_FOLDER_OUT = "Folder where to save the created XML files."
+    SOLUTIONS_FOLDER_SRC = "Folder that contains the SOL files."
+    PROCESSORS_NUMBER = "Number of processors for parallel execution."
+    CPU_TIME = "Maximum CPU time for each process."
+    SOLUTIONS_NUMBER = "Number of solutions created for each problem (LPG only)."
+    SOLUTIONS_FOLDER_OUT = "Folder where to save the SOL files."
+    SOLVER_FILE_SRC = "Path to the solver file."
+    PDDL_FILE_FOLDER_SRC = "Folder that contains the pddl problems files."
     PARAMETERS_NUMBER = "Number of parameters templates to generate."
     PARAMS_TEMPLATE_DIR_OUT = "Folder where to store the created template file(s)."
     SAVE_STATS_FLAG = "Flag for creating the file stats.txt that saves the stats in the plots directory."
@@ -98,3 +108,12 @@ class KEYS:
 
 class PARAMS_GEN:
     DEFAULT_MODEL_NAME = "MODEL_NAME_TO_CHANGE"
+
+
+class GENERATE_FILES:
+    XML = "xml"
+    SOL = "sol"
+    LPG = "LPG"
+    FF = "FF"
+    DOMAIN_FILE = "domain.pddl"
+    HOME = "$HOME"
