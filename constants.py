@@ -43,6 +43,10 @@ class CREATE_DATASET:
 
 
 class HELPS:
+    DATASET_TYPE = "Type of created problems."
+    DOMAIN = "PDDL domain of the problems."
+    STARTING_DIR_SRC = "Folder that contains the datasets folder."
+    PYTHON_FILE = "Path to the python bin file."
     SOLVER_SOLUTIONS = "Name of the solver used for generating the solutions."
     LPG_SOLVER_FILE_SRC = "Path to LPG solver."
     XML_FOLDER_OUT = "Folder where to save the created XML files."
@@ -117,3 +121,14 @@ class GENERATE_FILES:
     FF = "FF"
     DOMAIN_FILE = "domain.pddl"
     HOME = "$HOME"
+
+
+class EXPERIMENT:
+    CREATE_DATASET_PY = "create_dataset.py"
+    GENERATE_FILES_PY = "generate_files.py"
+    PLOTS_FOLDER = "plots"
+    PLANS_AND_DICT_FOLDER = "dictionaries_and_plans"
+    XMLS_FOLDERS = "xmls"
+    SOLUTIONS_FOLDER = "solutions"
+    PLANS_FOLDER = "plans"
+    DATASET_FOLDER = "datasets"
