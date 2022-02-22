@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-from plan import action
+import action
 
 
 def nth_repl(s, sub, repl, nth):
